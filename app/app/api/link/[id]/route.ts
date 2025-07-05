@@ -30,6 +30,7 @@ export async function PATCH(
     slipUploadedAt: Date;
     status: string;
     statusChangedAt: Date;
+    paidMessage: string; // เพิ่มตรงนี้
   }> = {};
 
   if (typeof body.slip !== "undefined") update.slip = body.slip;
@@ -38,6 +39,7 @@ export async function PATCH(
   if (typeof body.status !== "undefined") update.status = body.status;
   if (typeof body.statusChangedAt !== "undefined")
     update.statusChangedAt = new Date(body.statusChangedAt);
+  if (typeof body.paidMessage !== "undefined") update.paidMessage = body.paidMessage; // เพิ่มตรงนี้
 
   const doc = await LinkModel.findByIdAndUpdate(id, update, { new: true });
   if (!doc) {

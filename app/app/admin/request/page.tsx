@@ -11,6 +11,7 @@ type RowData = {
     createdAt: string;
     slip?: string;
     slipUploadedAt?: string;
+    paidMessage?: string;
 };
 
 const PAGE_SIZE = 30;
@@ -21,16 +22,25 @@ export default function AdminRequestPage() {
     const [selected, setSelected] = useState<RowData | null>(null);
     const [rows, setRows] = useState<RowData[]>([]);
     const [loading, setLoading] = useState(true);
+    const [customPaidMessage, setCustomPaidMessage] = useState("");
+    const [refreshing, setRefreshing] = useState(false);
+    const DEFAULT_PAID_MESSAGE = "คุณไม่เหลือยอดค้างชำระสำหรับใบแจ้งหนี้นี้";
+
+    // ฟังก์ชันสำหรับโหลดข้อมูลใหม่
+    const fetchRows = async () => {
+        setRefreshing(true);
+        setLoading(true);
+        const res = await fetch("/api/link?sort=desc");
+        const data = await res.json();
+        setRows(data);
+        setLoading(false);
+        setRefreshing(false);
+    };
 
     // ดึงข้อมูลจาก API
     useEffect(() => {
-        setLoading(true);
-        fetch("/api/link?sort=desc")
-            .then((res) => res.json())
-            .then((data) => {
-                setRows(data);
-                setLoading(false);
-            });
+        fetchRows();
+        // eslint-disable-next-line
     }, []);
 
     const totalPage = Math.ceil(rows.length / PAGE_SIZE);
@@ -38,36 +48,78 @@ export default function AdminRequestPage() {
 
     const openModal = (row: RowData) => {
         setSelected(row);
+        setCustomPaidMessage(row.paidMessage || "");
         setModalOpen(true);
     };
 
     const closeModal = () => {
         setModalOpen(false);
         setSelected(null);
+        setCustomPaidMessage("");
     };
 
-    // เพิ่มฟังก์ชันสำหรับอัปเดตสถานะ
-    async function updateStatus(id: string, status: string) {
+    // เพิ่มฟังก์ชันสำหรับอัปเดตสถานะและข้อความ
+    async function updateStatus(id: string, status: string, paidMessage?: string) {
         await fetch(`/api/link/${id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 status,
-                statusChangedAt: new Date().toISOString()
+                statusChangedAt: new Date().toISOString(),
+                ...(paidMessage ? { paidMessage } : {})
             })
         });
     }
 
     return (
         <div className="max-w-6xl mx-auto mt-10 p-6 bg-white rounded shadow border border-gray-200">
-            {/* ปุ่มไปหน้าสร้าง Link */}
-            <div className="mt-8 text-center">
+            {/* ปุ่มไปหน้าสร้าง Link และปุ่ม Refresh */}
+            <div className="mt-8 text-center flex justify-between items-center">
                 <a
                     href="/admin"
                     className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold"
                 >
                     ไปหน้าสร้าง Link
                 </a>
+                <button
+                    className="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded font-semibold ml-2"
+                    onClick={fetchRows}
+                    disabled={refreshing}
+                >
+                    {refreshing ? (
+                        <svg className="animate-spin h-5 w-5 mr-2 text-gray-600" viewBox="0 0 24 24">
+                            <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                fill="none"
+                            />
+                            <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                            />
+                        </svg>
+                    ) : (
+                        <svg
+                            className="h-5 w-5 mr-2 text-gray-600"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M4 4v5h.582M20 20v-5h-.581M5.21 17.293A8 8 0 1112 20v-1"
+                            />
+                        </svg>
+                    )}
+                    รีเฟรช
+                </button>
             </div>
             <h2 className="text-2xl font-bold mb-6">รายการสร้าง Link</h2>
 
@@ -118,9 +170,8 @@ export default function AdminRequestPage() {
                                         {row.status === "100" && (
                                             <span className="text-blue-600 font-semibold">รอตรวจสอบ</span>
                                         )}
-                                        {row.status === "200" && (
-                                            <span className="text-green-600 font-semibold">ตรวจสอบผ่าน</span>
-                                        )}
+                                        {row.status === "200" && "ตรวจสอบผ่าน"}
+                                        {row.status === "201" && "ตรวจสอบผ่าน*"}
                                         {row.status === "300" && (
                                             <span className="text-red-600 font-semibold">ตรวจสอบไม่ผ่าน</span>
                                         )}
@@ -196,6 +247,7 @@ export default function AdminRequestPage() {
                             <b>สถานะ:</b> {selected.status === "000" && "รอแนบสลิป"}
                             {selected.status === "100" && "รอตรวจสอบ"}
                             {selected.status === "200" && "ตรวจสอบผ่าน"}
+                            {selected.status === "201" && "ตรวจสอบผ่าน*"}
                             {selected.status === "300" && "ตรวจสอบไม่ผ่าน"}
                             {selected.status === "301" && "ยกเลิก Link"}
                         </div>
@@ -211,47 +263,58 @@ export default function AdminRequestPage() {
                                 />
                             </div>
                         )}
+
+                        {/* Textbox สำหรับข้อความตรวจสอบผ่าน */}
+                        <div className="mt-4">
+                            <label className="block font-semibold mb-2">
+                                ข้อความเมื่อ `ตรวจสอบผ่าน` (ถ้าไม่กรอกจะใช้ค่าเริ่มต้น)
+                            </label>
+                            <textarea
+                                className="border rounded p-2 w-full"
+                                rows={2}
+                                placeholder={DEFAULT_PAID_MESSAGE}
+                                value={customPaidMessage}
+                                onChange={(e) => setCustomPaidMessage(e.target.value)}
+                            />
+                        </div>
+
                         <div className="flex gap-2 mt-6">
+                            {/* ตรวจสอบผ่าน */}
                             <button
                                 className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded font-semibold"
                                 onClick={async () => {
-                                    await updateStatus(selected._id, "200"); // ตรวจสอบผ่าน
-                                    closeModal();
-                                    // อัปเดตข้อมูลในตาราง
-                                    setRows((prev) =>
-                                        prev.map((row) => (row._id === selected._id ? { ...row, status: "200" } : row))
+                                    await updateStatus(
+                                        selected._id,
+                                        customPaidMessage.trim() ? "201" : "200",
+                                        customPaidMessage.trim() ? customPaidMessage : DEFAULT_PAID_MESSAGE
                                     );
+                                    closeModal();
+                                    fetchRows(); // รีเฟรชตาราง
                                 }}
                             >
-                                ตรวจสอบแล้วผ่าน
+                                ตรวจสอบผ่าน
                             </button>
+                            {/* ตรวจสอบไม่ผ่าน */}
                             <button
                                 className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded font-semibold"
                                 onClick={async () => {
-                                    await updateStatus(selected._id, "300"); // ไม่ผ่าน
+                                    await updateStatus(selected._id, "300");
                                     closeModal();
-                                    setRows((prev) =>
-                                        prev.map((row) => (row._id === selected._id ? { ...row, status: "300" } : row))
-                                    );
+                                    fetchRows(); // รีเฟรชตาราง
                                 }}
                             >
-                                ตรวจสอบแล้วไม่ผ่าน
+                                ตรวจสอบไม่ผ่าน
                             </button>
+                            {/* ยกเลิกลิงค์ */}
                             <button
-                                className="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-2 rounded font-semibold"
+                                className="flex-1 bg-gray-500 hover:bg-gray-700 text-white py-2 rounded font-semibold"
                                 onClick={async () => {
-                                    if (confirm("ต้องการยกเลิก Link นี้ใช่หรือไม่?")) {
-                                        await updateStatus(selected._id, "301"); // ยกเลิก
-                                        closeModal();
-                                        setRows((prev) =>
-                                            prev.map((row) =>
-                                                row._id === selected._id ? { ...row, status: "301" } : row
-                                            )
-                                        );
-                                    }
+                                    await updateStatus(selected._id, "301");
+                                    closeModal();
+                                    fetchRows(); // รีเฟรชตาราง
                                 }}
                             >
-                                ยกเลิก Link
+                                ยกเลิกลิงค์
                             </button>
                         </div>
                     </div>

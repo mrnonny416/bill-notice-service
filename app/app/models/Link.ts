@@ -8,6 +8,7 @@ export interface ILink extends Document {
   slipUploadedAt?: Date | null;
   statusChangedAt?: Date | null;
   createdAt?: Date;
+  paidMessage?: string | null; // เพิ่มตรงนี้
 }
 
 const LinkSchema: Schema = new Schema(
@@ -19,6 +20,7 @@ const LinkSchema: Schema = new Schema(
     slipUploadedAt: { type: Date, default: null },
     statusChangedAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now },
+    paidMessage: { type: String, default: null }, // เพิ่มตรงนี้
   },
   { collection: "links", strict: false }
 );

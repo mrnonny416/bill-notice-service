@@ -11,6 +11,7 @@ type BillData = {
     bankDetails: string;
     qrCodeUrl: string;
     status: string;
+    paidMessage?: string;
 };
 
 export default function BillNoticePage() {
@@ -33,12 +34,11 @@ export default function BillNoticePage() {
                     accountNumber: bill.accountNumber || "123-4-56789-0",
                     bankDetails: bill.bankDetails || "ธนาคารกรุงเทพ สาขาสีลม",
                     qrCodeUrl: bill.qrCodeUrl || "/qrcode.png",
-                    status: bill.status
+                    status: bill.status,
+                    paidMessage: bill.paidMessage
                 });
                 setSlipUploaded(
-                    bill.status === "100" ||
-                    bill.status === "200" ||
-                    bill.status === "300"
+                    bill.status === "100" || bill.status === "200" || bill.status === "201" || bill.status === "300"
                 );
                 setLoading(false);
             });
@@ -96,13 +96,13 @@ export default function BillNoticePage() {
             <div className="mb-4">
                 <strong>ชื่อ:</strong> {data.name}
             </div>
-            {data.status === "200" ? (
+            {data.status === "200" || data.status === "201" ? (
                 <>
-                    <div className="mb-6 text-green-700 font-bold text-center text-xl">
-                        คุณชำระแล้ว
-                    </div>
+                    <div className="mb-6 text-green-700 font-bold text-center text-xl">คุณชำระแล้ว</div>
                     <div className="mb-4 text-center text-lg">
-                        คุณไม่เหลือยอดค้างชำระสำหรับใบแจ้งหนี้นี้
+                        {data.status === "201" && data.paidMessage
+                            ? data.paidMessage
+                            : "คุณไม่เหลือยอดค้างชำระสำหรับใบแจ้งหนี้นี้"}
                     </div>
                 </>
             ) : data.status === "300" ? (
