@@ -118,46 +118,53 @@ export default function BillNoticePage() {
     if (data.status === "200" || data.status === "201") {
         return (
             <div
-                className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow border border-gray-200"
+                className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg"
                 style={{
                     fontFamily:
                         "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, 'Segoe UI', Arial, Roboto, 'PingFang SC', miui, 'Hiragino Sans GB', 'Microsoft Yahei', sans-serif"
                 }}
             >
                 <div className="flex flex-col items-center mx-6">
-                    <div className="mb-2">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                            <circle cx="24" cy="24" r="24" fill="#E6F9EC" />
-                            <path
-                                d="M34 18L22 30L14 22"
-                                stroke="#22B573"
-                                strokeWidth="3"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
+                    <div className="flex flex-row items-center gap-2">
+                        <div className="mb-2">
+                            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                                <circle cx="20" cy="20" r="20" fill="#E6F9EC" />
+                                <path
+                                    d="M14 20L18 24L26 16"
+                                    stroke="#22B573"
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            </svg>
+                        </div>
+                        <div className="text-2xl font-bold text-[#303ac6] mb-2">ชำระเงินสำเร็จแล้ว</div>
                     </div>
-                    <div className="text-2xl font-bold text-[#1A56DB] mb-2">ชำระเงินสำเร็จแล้ว</div>
-                    <div className=" text-center text-[#444] text-base mb-2">
+                    <div className=" text-center text-[#444] text-base mb-2 text-md font-bold">
                         {data.status === "201" && data.paidMessage
                             ? data.paidMessage
                             : "คุณไม่เหลือยอดค้างชำระสำหรับใบแจ้งหนี้นี้"}
                     </div>
-                    <div className="text-[#666] mb-2">ความคืบหน้าการชำระเงิน</div>
-                    <hr className="my-2" />
-                    <div className="w-full mb-4 ">
-                        <ul className="relative pl-6">
-                            <li className="mb-2 flex items-center">
-                                <span className="absolute -left-6 w-4 h-4 rounded-full border-2 border-[#1A56DB] bg-white flex items-center justify-center">
-                                    <span className="w-2 h-2 bg-[#1A56DB] rounded-full block"></span>
-                                </span>
-                                <span className="font-bold text-[#1A56DB]">ตรวจสอบ</span>
+                    <div className="flex w-full">
+                        <div className="text-[#222] mb-2 ml-2">ความคืบหน้าการชำระเงิน</div>
+                    </div>
+                    <div className="my-2 border-1 w-full border-slate-200"></div>
+                    <div className="w-full mb-4 ml-16">
+                        <ul className="relative pl-1">
+                            {/* เส้นเชื่อมแนวตั้ง */}
+                            <div className="absolute left-[8.5px] top-2 bottom-2 w-0.5 bg-[#E0E0E0] z-0" />
+                            <div className="absolute left-[8.5px] top-2 bottom-2 w-0.5  bg-[#303ac6] z-0" />
+                            <li className="ml-[1.5px] mb-2 flex items-center relative z-10">
+                                <span className="w-2 h-2 rounded-full border-2 border-[#303ac6] bg-[#303ac6] flex items-center justify-center"></span>
+                                <span className="font-bold text-[#303ac6] ml-3">รับหลักฐานการโอนเงิน</span>
                             </li>
-                            <li className="flex items-center font-bold text-[#1A56DB]">
-                                <span className="absolute -left-6 w-4 h-4 rounded-full border-2 border-[#1A56DB] bg-white flex items-center justify-center">
-                                    <span className="w-2 h-2 bg-[#1A56DB] rounded-full block"></span>
-                                </span>
-                                ตรวจสอบผ่าน
+                            <li className="ml-[1.5px] mb-2 flex items-center relative z-10">
+                                <span className="w-2 h-2 rounded-full border-2 border-[#303ac6] bg-[#303ac6] flex items-center justify-center"></span>
+                                <span className="font-bold text-[#303ac6] ml-3">กำลังตรวจสอบหลักฐานการโอนเงิน</span>
+                            </li>
+                            <li className=" flex items-center font-bold text-[#BDBDBD] relative z-10">
+                                <span className="w-3 h-3 rounded-full border-2 border-[#303ac6] bg-[#303ac6] flex items-center justify-center"></span>
+                                <span className="font-bold text-[#303ac6] ml-3">ตรวจสอบแล้ว</span>
                             </li>
                         </ul>
                     </div>
@@ -196,10 +203,10 @@ export default function BillNoticePage() {
                     <div className="w-full mb-4">
                         <ul className="relative pl-6">
                             <li className="mb-2 flex items-center">
-                                <span className="absolute -left-6 w-4 h-4 rounded-full border-2 border-[#1A56DB] bg-white flex items-center justify-center">
-                                    <span className="w-2 h-2 bg-[#1A56DB] rounded-full block"></span>
+                                <span className="absolute -left-6 w-4 h-4 rounded-full border-2 border-[#303ac6] bg-white flex items-center justify-center">
+                                    <span className="w-2 h-2 bg-[#303ac6] rounded-full block"></span>
                                 </span>
-                                <span className="font-bold text-[#1A56DB]">ตรวจสอบ</span>
+                                <span className="font-bold text-[#303ac6]">ตรวจสอบ</span>
                             </li>
                             <li className="flex items-center font-bold text-[#E02424]">
                                 <span className="absolute -left-6 w-4 h-4 rounded-full border-2 border-[#E02424] bg-white flex items-center justify-center">
@@ -258,48 +265,52 @@ export default function BillNoticePage() {
     if (data.status === "100") {
         return (
             <div
-                className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow border border-gray-200"
+                className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg "
                 style={{
                     fontFamily:
                         "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, 'Segoe UI', Arial, Roboto, 'PingFang SC', miui, 'Hiragino Sans GB', 'Microsoft Yahei', sans-serif"
                 }}
             >
                 <div className="flex flex-col items-center mx-6">
-                    <div className="mb-2">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                            <circle cx="24" cy="24" r="24" fill="#E6F0FA" />
-                            <path
-                                d="M24 14v12"
-                                stroke="#1A56DB"
-                                strokeWidth="3"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                            <circle cx="24" cy="32" r="2" fill="#1A56DB" />
-                        </svg>
+                    <div className="flex flex-row items-center gap-2">
+                        <div className="mb-2">
+                            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                                <circle cx="20" cy="20" r="20" fill="#E6F0FA" />
+                                <path
+                                    d="M20 10v12"
+                                    stroke="#303ac6"
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                                <circle cx="20" cy="30" r="2" fill="#303ac6" />
+                            </svg>
+                        </div>
+                        <div className="text-[30px] font-bold text-[#303ac6] mb-2">รอตรวจสอบ</div>
                     </div>
-                    <div className="text-2xl font-bold text-[#1A56DB] mb-2">รอตรวจสอบ</div>
-                    <div className="text-[#222] mb-2">ระบบกำลังตรวจสอบข้อมูลการชำระเงินของคุณ</div>
-                    <div className="text-[#666] mb-2">ความคืบหน้าการชำระเงิน</div>
-                    <hr className="my-2" />
-                    <div className="w-full mb-4">
-                        <ul className="relative pl-6">
-                            <li className="mb-2 flex items-center">
-                                <span className="absolute -left-6 w-4 h-4 rounded-full border-2 border-[#1A56DB] bg-white flex items-center justify-center">
-                                    <span className="w-2 h-2 bg-[#1A56DB] rounded-full block"></span>
-                                </span>
-                                <span className="font-bold text-[#1A56DB]">ตรวจสอบ</span>
+                    <div className="text-[#222] mb-2 text-md font-bold">ระบบกำลังตรวจสอบข้อมูลการชำระเงินของคุณ</div>
+                    <div className="flex w-full">
+                        <div className="text-[#222] mb-2 ml-2">ความคืบหน้าการชำระเงิน</div>
+                    </div>
+                    <div className="my-2 border-1 w-full border-slate-200"></div>
+                    <div className="w-full mb-4 ml-16">
+                        <ul className="relative pl-1">
+                            {/* เส้นเชื่อมแนวตั้ง */}
+                            <div className="absolute left-[8.5px] top-2 bottom-2 w-0.5 bg-[#E0E0E0] z-0" />
+                            <div className="absolute left-[8.5px] top-2 bottom-2 w-0.5 h-10 bg-[#303ac6] z-0" />
+                            <li className="ml-[1.5px] mb-2 flex items-center relative z-10">
+                                <span className="w-2 h-2 rounded-full border-2 border-[#303ac6] bg-[#303ac6] flex items-center justify-center"></span>
+                                <span className="font-bold text-[#303ac6] ml-3">รับหลักฐานการโอนเงิน</span>
                             </li>
-                            <li className="flex items-center font-bold text-[#BDBDBD]">
-                                <span className="absolute -left-6 w-4 h-4 rounded-full border-2 border-[#BDBDBD] bg-white flex items-center justify-center">
-                                    <span className="w-2 h-2 bg-[#BDBDBD] rounded-full block"></span>
-                                </span>
-                                ตรวจสอบผ่าน
+                            <li className="mb-2 flex items-center relative z-10">
+                                <span className="w-3 h-3 rounded-full border-2 border-[#303ac6] bg-[#303ac6] flex items-center justify-center"></span>
+                                <span className="font-bold text-[#303ac6] ml-3">กำลังตรวจสอบหลักฐานการโอนเงิน</span>
+                            </li>
+                            <li className="ml-[1.5px] flex items-center font-bold text-[#BDBDBD] relative z-10">
+                                <span className="w-2 h-2 rounded-full border-2 border-[#BDBDBD] bg-white flex items-center justify-center"></span>
+                                <span className="ml-3">ตรวจสอบแล้ว</span>
                             </li>
                         </ul>
-                    </div>
-                    <div className="mt-6 text-center text-[#444] text-base">
-                        กรุณารอเจ้าหน้าที่ตรวจสอบข้อมูลการชำระเงิน
                     </div>
                 </div>
             </div>
