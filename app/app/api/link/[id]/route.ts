@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
-import { LinkModel } from "@/app/models/Link";
+import { LinkModel } from "@/models/Link";
 
 // GET /api/link/[id]
 export async function GET(
