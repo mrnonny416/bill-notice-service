@@ -3,9 +3,26 @@ import { useState } from "react";
 import { SlArrowDown } from "react-icons/sl";
 import { BsFillInfoCircleFill } from "react-icons/bs";
 
+type Props = {
+  outStandingBalance: number;
+  dueDate: Date;
+  previousQuota: number;
+  currentQuota: number;
+  nextQuota: number;
+  extraQuota: number;
+};
+
+const invoiceData: Props = {
+  outStandingBalance: 1250.0,
+  dueDate: new Date(new Date("2025-8-3").setHours(0, 0, 0, 0)),
+  previousQuota: 3800.0,
+  currentQuota: 3800.0,
+  nextQuota: 5400.0,
+  extraQuota: 1750.0,
+};
+
 export default function Invoice() {
   const [openInfo, setOpenInfo] = useState(false);
-
   const [openLimit, setOpenLimit] = useState(false);
 
   return (
@@ -23,12 +40,21 @@ export default function Invoice() {
             }}
           >
             <p className="text-2xl">ยอดที่ต้องชำระ</p>
-            <p className="text-4xl font-bold">฿ 1,250.00</p>
+            <p className="text-4xl font-bold">
+              ฿ {invoiceData.outStandingBalance.toLocaleString("th-TH")}
+            </p>
             <p className="text-md">
-              วันที่ครบกำหนด: {new Date().toLocaleDateString("th-TH")}
+              วันที่ครบกำหนด: {invoiceData.dueDate.toLocaleDateString("th-TH")}
             </p>
             <button className="text-md w-fit rounded-4xl bg-orange-300 px-4 py-2">
-              อีก 1 วันที่ครบกำหนด
+              {(() => {
+                const today = new Date();
+                const due = new Date(invoiceData.dueDate);
+                const diffTime =
+                  due.setHours(0, 0, 0, 0) - today.setHours(0, 0, 0, 0);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return `อีก ${diffDays} วันครบกำหนด`;
+              })()}
             </button>
           </div>
           <div className="flex w-full flex-col">
@@ -93,15 +119,23 @@ export default function Invoice() {
                     <div className="rounded-full border-4 border-indigo-600 p-1"></div>
                   </div>
                   <div className="text-bold flex flex-col gap-3 font-bold">
-                    <div>฿ 3,800</div>
-                    <div>฿ 3,800</div>
-                    <div>฿ 5,400</div>
+                    <div className="text-slate-600">
+                      ฿ {invoiceData.previousQuota.toLocaleString("th-TH")}
+                    </div>
+                    <div className="text-slate-600">
+                      ฿ {invoiceData.currentQuota.toLocaleString("th-TH")}
+                    </div>
+                    <div className="text-slate-600">
+                      ฿ {invoiceData.nextQuota.toLocaleString("th-TH")}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 self-center text-sm text-slate-400">
                   <BsFillInfoCircleFill color="orange" />
                   ชำระตรงเวลา ขอกู้ใหม่ได้
-                  <p className="text-red-500">฿ 1,750</p>
+                  <p className="text-red-500">
+                    ฿ {invoiceData.extraQuota.toLocaleString("th-TH")}
+                  </p>
                 </div>
               </div>
             )}
