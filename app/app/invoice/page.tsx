@@ -2,6 +2,9 @@
 import { useState } from "react";
 import { SlArrowDown } from "react-icons/sl";
 import { BsFillInfoCircleFill } from "react-icons/bs";
+import FloatingButton from "@/components/FloatingButton";
+import BottomMenu from "@/components/BottomMenu";
+import { useRouter } from "next/navigation";
 
 type Props = {
   outStandingBalance: number;
@@ -24,6 +27,7 @@ const invoiceData: Props = {
 export default function Invoice() {
   const [openInfo, setOpenInfo] = useState(false);
   const [openLimit, setOpenLimit] = useState(false);
+  const router = useRouter();
 
   return (
     <>
@@ -141,7 +145,10 @@ export default function Invoice() {
             )}
           </div>
           <div className="flex w-full flex-col gap-6">
-            <button className="h-fit w-full rounded-4xl bg-indigo-600 py-3 text-white">
+            <button
+              className="h-fit w-full rounded-4xl bg-indigo-600 py-3 text-white"
+              onClick={() => router.push("/payments")}
+            >
               ชำระเงินกู้
             </button>
             <button className="border-inner-2 h-fit w-full rounded-4xl border-1 border-indigo-600 bg-white py-3 text-indigo-600">
@@ -150,6 +157,8 @@ export default function Invoice() {
           </div>
         </div>
       </div>
+      <FloatingButton />
+      <BottomMenu active="left" />
     </>
   );
 }

@@ -1,8 +1,13 @@
 "use client";
 
+import BottomMenu from "@/components/BottomMenu";
+import FloatingButton from "@/components/FloatingButton";
 import { HiOutlineSpeakerWave } from "react-icons/hi2";
+import { useRouter } from "next/navigation";
 
 export default function Payments() {
+  const router = useRouter();
+
   return (
     <>
       <div className="mx-auto flex w-full items-center justify-center bg-orange-100 text-orange-500">
@@ -41,19 +46,25 @@ export default function Payments() {
             <div className="relative w-full">
               <select className="w-full rounded-md border-1 border-gray-400 p-3 pl-8">
                 <option value="">โปรดเลือกบัตรธนาคาร</option>
-                <option value="bank1">ธนาคาร 1</option>
-                <option value="bank2">ธนาคาร 2</option>
-                <option value="bank3">ธนาคาร 3</option>
+                <option value="bank1">SCB</option>
+                <option value="bank2">K BANK</option>
+                <option value="bank3">THBANK</option>
               </select>
             </div>
           </div>
           <div className="mt-5 flex w-full justify-start text-gray-400">
-            <button className="h-fit w-full rounded-4xl bg-indigo-600 py-3 text-white">
+            <button
+              className="h-fit w-full rounded-4xl bg-indigo-600 py-3 text-white"
+              type="button"
+              onClick={() => router.push("/qr")}
+            >
               ขั้นตอนต่อไป
             </button>
           </div>
         </div>
       </div>
+      <FloatingButton />
+      <BottomMenu active="right" />
     </>
   );
 }

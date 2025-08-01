@@ -1,12 +1,14 @@
 "use client";
 
-import React, { Suspense } from "react";
-import BillNoticePage from "./BillNoticePage";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <BillNoticePage />
-        </Suspense>
-    );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/invoice");
+  }, [router]);
+
+  return null;
 }
