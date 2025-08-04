@@ -1,10 +1,10 @@
-"use client";
-import { useState } from "react";
-import { SlArrowDown } from "react-icons/sl";
-import { BsFillInfoCircleFill } from "react-icons/bs";
-import FloatingButton from "@/components/FloatingButton";
-import BottomMenu from "@/components/BottomMenu";
-import { useRouter } from "next/navigation";
+'use client';
+import { Suspense, useState, useEffect } from 'react';
+import { SlArrowDown } from 'react-icons/sl';
+import { BsFillInfoCircleFill } from 'react-icons/bs';
+import FloatingButton from '@/components/FloatingButton';
+import BottomMenu from '@/components/BottomMenu';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type Props = {
   outStandingBalance: number;
@@ -15,19 +15,65 @@ type Props = {
   extraQuota: number;
 };
 
-const invoiceData: Props = {
-  outStandingBalance: 1250.0,
-  dueDate: new Date(new Date("2025-8-3").setHours(0, 0, 0, 0)),
-  previousQuota: 3800.0,
-  currentQuota: 3800.0,
-  nextQuota: 5400.0,
-  extraQuota: 1750.0,
-};
-
-export default function Invoice() {
+function InvoiceContent() {
   const [openInfo, setOpenInfo] = useState(false);
   const [openLimit, setOpenLimit] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
+
+  const [invoiceData, setInvoiceData] = useState<Props | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchInvoiceData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/link/${id}`);
+        if (!res.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        const linkData = await res.json();
+
+        setInvoiceData({
+          outStandingBalance: linkData.outStandingBalance,
+          dueDate: new Date(linkData.dueDate),
+          previousQuota: linkData.previousQuota,
+          currentQuota: linkData.currentQuota,
+          nextQuota: linkData.nextQuota,
+          extraQuota: linkData.extraQuota,
+        });
+      } catch (error) {
+        console.error('Failed to fetch invoice data:', error);
+        setInvoiceData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInvoiceData();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="mx-auto mt-10 max-w-md rounded-lg p-6 text-center">
+        กำลังโหลดข้อมูล...
+      </div>
+    );
+  }
+
+  if (!invoiceData) {
+    return (
+      <div className="mx-auto mt-10 max-w-md rounded-lg p-6 text-center">
+        ไม่พบข้อมูลใบแจ้งหนี้
+      </div>
+    );
+  }
 
   return (
     <>
@@ -37,18 +83,18 @@ export default function Invoice() {
             className="relative flex w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-3xl py-4 text-center text-white"
             style={{
               backgroundImage: "url('/card-bg-sportlight.png')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-              minHeight: "180px",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              minHeight: '180px',
             }}
           >
             <p className="text-2xl">ยอดที่ต้องชำระ</p>
             <p className="text-4xl font-bold">
-              ฿ {invoiceData.outStandingBalance.toLocaleString("th-TH")}
+              ฿ {invoiceData.outStandingBalance.toLocaleString('th-TH')}
             </p>
             <p className="text-md">
-              วันที่ครบกำหนด: {invoiceData.dueDate.toLocaleDateString("th-TH")}
+              วันที่ครบกำหนด: {invoiceData.dueDate.toLocaleDateString('th-TH')}
             </p>
             <button className="text-md w-fit rounded-4xl bg-orange-300 px-4 py-2">
               {(() => {
@@ -69,7 +115,9 @@ export default function Invoice() {
             >
               ข้อมูลเงินกู้
               <span
-                className={`transition-transform ${openInfo ? "rotate-180" : ""}`}
+                className={`transition-transform ${
+                  openInfo ? 'rotate-180' : ''
+                }`}
               >
                 <SlArrowDown />
               </span>
@@ -88,7 +136,9 @@ export default function Invoice() {
             >
               ชำระเงินกู้คืน วงเงินเพิ่ม
               <span
-                className={`transition-transform ${openLimit ? "rotate-180" : ""}`}
+                className={`transition-transform ${
+                  openLimit ? 'rotate-180' : ''
+                }`}
               >
                 <SlArrowDown />
               </span>
@@ -100,9 +150,9 @@ export default function Invoice() {
                   <div
                     className="absolute -top-2 left-4 h-0 w-0"
                     style={{
-                      borderLeft: "10px solid transparent",
-                      borderRight: "10px solid transparent",
-                      borderBottom: "10px solid #e5e7eb",
+                      borderLeft: '10px solid transparent',
+                      borderRight: '10px solid transparent',
+                      borderBottom: '10px solid #e5e7eb',
                     }}
                   />
                   <p className="text-sm text-slate-600">
@@ -124,13 +174,13 @@ export default function Invoice() {
                   </div>
                   <div className="text-bold flex flex-col gap-3 font-bold">
                     <div className="text-slate-600">
-                      ฿ {invoiceData.previousQuota.toLocaleString("th-TH")}
+                      ฿ {invoiceData.previousQuota.toLocaleString('th-TH')}
                     </div>
                     <div className="text-slate-600">
-                      ฿ {invoiceData.currentQuota.toLocaleString("th-TH")}
+                      ฿ {invoiceData.currentQuota.toLocaleString('th-TH')}
                     </div>
                     <div className="text-slate-600">
-                      ฿ {invoiceData.nextQuota.toLocaleString("th-TH")}
+                      ฿ {invoiceData.nextQuota.toLocaleString('th-TH')}
                     </div>
                   </div>
                 </div>
@@ -138,7 +188,7 @@ export default function Invoice() {
                   <BsFillInfoCircleFill color="orange" />
                   ชำระตรงเวลา ขอกู้ใหม่ได้
                   <p className="text-red-500">
-                    ฿ {invoiceData.extraQuota.toLocaleString("th-TH")}
+                    ฿ {invoiceData.extraQuota.toLocaleString('th-TH')}
                   </p>
                 </div>
               </div>
@@ -147,7 +197,7 @@ export default function Invoice() {
           <div className="flex w-full flex-col gap-6">
             <button
               className="h-fit w-full rounded-4xl bg-indigo-600 py-3 text-white"
-              onClick={() => router.push("/payments")}
+              onClick={() => router.push(`/payments?id=${id}`)}
             >
               ชำระเงินกู้
             </button>
@@ -160,5 +210,13 @@ export default function Invoice() {
       <FloatingButton />
       <BottomMenu active="left" />
     </>
+  );
+}
+
+export default function InvoicePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <InvoiceContent />
+    </Suspense>
   );
 }

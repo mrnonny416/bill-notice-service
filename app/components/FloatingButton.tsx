@@ -10,7 +10,7 @@ const FloatingButton: React.FC<FloatingButtonProps> = ({ onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="fixed right-10 bottom-[200px] z-51 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform"
+      className="fixed right-5 bottom-[60] z-51 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform"
       aria-label="Help Button"
     >
       <Image

@@ -9,6 +9,12 @@ export interface ILink extends Document {
   statusChangedAt?: Date | null;
   createdAt?: Date;
   paidMessage?: string | null; // เพิ่มตรงนี้
+  outStandingBalance?: number;
+  dueDate?: Date;
+  previousQuota?: number;
+  currentQuota?: number;
+  nextQuota?: number;
+  extraQuota?: number;
 }
 
 const LinkSchema: Schema = new Schema(
@@ -21,6 +27,12 @@ const LinkSchema: Schema = new Schema(
     statusChangedAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now },
     paidMessage: { type: String, default: null }, // เพิ่มตรงนี้
+    outStandingBalance: { type: Number },
+    dueDate: { type: Date },
+    previousQuota: { type: Number },
+    currentQuota: { type: Number },
+    nextQuota: { type: Number },
+    extraQuota: { type: Number },
   },
   { collection: "links", strict: false }
 );

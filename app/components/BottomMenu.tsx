@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FaClipboardList } from "react-icons/fa";
 import { IoClipboardOutline } from "react-icons/io5";
 import { IoClipboard } from "react-icons/io5";
@@ -20,12 +20,14 @@ export default function BottomMenu({
   active,
 }: BottomMenuProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
 
   const handleLeftClick = () => {
     if (onLeftClick) {
       onLeftClick();
     } else {
-      router.push("/invoice");
+      router.push(id ? `/invoice?id=${id}` : "/invoice");
     }
   };
 
@@ -33,7 +35,7 @@ export default function BottomMenu({
     if (onRightClick) {
       onRightClick();
     } else {
-      router.push("/qr");
+      router.push(id ? `/qr?id=${id}` : "/qr?id=688f4e8bc0c4aef760fe52d5");
     }
   };
 

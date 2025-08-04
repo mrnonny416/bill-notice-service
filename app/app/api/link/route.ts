@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    const { name, amount, status } = body;
+    const { name, amount, status, outStandingBalance, dueDate, previousQuota, currentQuota, nextQuota, extraQuota } = body;
 
     if (!name || !amount || !status) {
       return NextResponse.json({ error: "ข้อมูลไม่ครบ" }, { status: 400 });
@@ -19,6 +19,12 @@ export async function POST(req: NextRequest) {
       slip: null,
       slipUploadedAt: null,
       statusChangedAt: null,
+      outStandingBalance,
+      dueDate,
+      previousQuota,
+      currentQuota,
+      nextQuota,
+      extraQuota,
     });
     return NextResponse.json(doc, { status: 201 });
   } catch (err: unknown) {

@@ -1,12 +1,39 @@
-"use client";
+'use client';
 
-import BottomMenu from "@/components/BottomMenu";
-import FloatingButton from "@/components/FloatingButton";
-import { HiOutlineSpeakerWave } from "react-icons/hi2";
-import { useRouter } from "next/navigation";
+import BottomMenu from '@/components/BottomMenu';
+import FloatingButton from '@/components/FloatingButton';
+import { HiOutlineSpeakerWave } from 'react-icons/hi2';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 
-export default function Payments() {
+function PaymentsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
+  const [amount, setAmount] = useState('');
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchPaymentData = async () => {
+      try {
+        const res = await fetch(`/api/link/${id}`);
+        if (!res.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        const linkData = await res.json();
+        setAmount(linkData.outStandingBalance.toString());
+      } catch (error) {
+        console.error('Failed to fetch payment data:', error);
+      }
+    };
+
+    fetchPaymentData();
+  }, [id]);
+
+  const handleNext = () => {
+    router.push(`/qr?id=${id}&amount=${amount}`);
+  };
 
   return (
     <>
@@ -25,7 +52,7 @@ export default function Payments() {
           <div className="text-sm text-gray-400">
             กรุณาใส่จำนวนเงินที่ชำระคืนของคุณ
             <span className="text-yellow-500">
-              {" "}
+              {' '}
               (จำนวนเงินที่ชำระคืนจะต้องสอดคล้องกับการโอนเงินจริง)
             </span>
           </div>
@@ -37,6 +64,8 @@ export default function Payments() {
               type="number"
               className="w-full rounded-md border-1 border-gray-400 p-3 pl-8"
               placeholder="จำนวนเงินที่ต้องการชำระคืน"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
             />
           </div>
           <div className="mt-2 flex w-full justify-start text-sm text-gray-400">
@@ -46,8 +75,6 @@ export default function Payments() {
             <div className="relative w-full">
               <select className="w-full rounded-md border-1 border-gray-400 p-3 pl-8">
                 <option value="">โปรดเลือกบัตรธนาคาร</option>
-                <option value="bank1">SCB</option>
-                <option value="bank2">K BANK</option>
                 <option value="bank3">THBANK</option>
               </select>
             </div>
@@ -56,7 +83,7 @@ export default function Payments() {
             <button
               className="h-fit w-full rounded-4xl bg-indigo-600 py-3 text-white"
               type="button"
-              onClick={() => router.push("/qr")}
+              onClick={handleNext}
             >
               ขั้นตอนต่อไป
             </button>
@@ -64,7 +91,15 @@ export default function Payments() {
         </div>
       </div>
       <FloatingButton />
-      <BottomMenu active="right" />
+      <BottomMenu active="left" />
     </>
+  );
+}
+
+export default function PaymentsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentsContent />
+    </Suspense>
   );
 }

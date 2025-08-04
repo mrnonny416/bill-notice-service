@@ -4,322 +4,616 @@ import Image from "next/image";
 import React, { useEffect, useState } from "react";
 
 type RowData = {
-    _id: string;
-    name: string;
-    amount: number;
-    status: string;
-    createdAt: string;
-    slip?: string;
-    slipUploadedAt?: string;
-    paidMessage?: string;
+  _id: string;
+  name: string;
+  amount: number;
+  status: string;
+  createdAt: string;
+  slip?: string;
+  slipUploadedAt?: string;
+  paidMessage?: string;
+  outStandingBalance?: number;
+  dueDate?: string;
+  previousQuota?: number;
+  currentQuota?: number;
+  nextQuota?: number;
+  extraQuota?: number;
 };
 
 const PAGE_SIZE = 30;
 
 export default function AdminRequestPage() {
-    const [page, setPage] = useState(1);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selected, setSelected] = useState<RowData | null>(null);
-    const [rows, setRows] = useState<RowData[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [customPaidMessage, setCustomPaidMessage] = useState("");
-    const [refreshing, setRefreshing] = useState(false);
-    const DEFAULT_PAID_MESSAGE = "คุณไม่เหลือยอดค้างชำระสำหรับใบแจ้งหนี้นี้";
+  const [page, setPage] = useState(1);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selected, setSelected] = useState<RowData | null>(null);
+  const [rows, setRows] = useState<RowData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [customPaidMessage, setCustomPaidMessage] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const DEFAULT_PAID_MESSAGE = "คุณไม่เหลือยอดค้างชำระสำหรับใบแจ้งหนี้นี้";
 
-    // ฟังก์ชันสำหรับโหลดข้อมูลใหม่
-    const fetchRows = async () => {
-        setRefreshing(true);
-        setLoading(true);
-        const res = await fetch("/api/link?sort=desc");
-        const data = await res.json();
-        setRows(data);
-        setLoading(false);
-        setRefreshing(false);
-    };
+  const [editData, setEditData] = useState<Partial<RowData>>({});
 
-    // ดึงข้อมูลจาก API
-    useEffect(() => {
-        fetchRows();
-        // eslint-disable-next-line
-    }, []);
+  // ฟังก์ชันสำหรับโหลดข้อมูลใหม่
+  const fetchRows = async () => {
+    setRefreshing(true);
+    setLoading(true);
+    const res = await fetch("/api/link?sort=desc");
+    const data = await res.json();
+    setRows(data);
+    setLoading(false);
+    setRefreshing(false);
+  };
 
-    const totalPage = Math.ceil(rows.length / PAGE_SIZE);
-    const data = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // ดึงข้อมูลจาก API
+  useEffect(() => {
+    fetchRows();
+    // eslint-disable-next-line
+  }, []);
 
-    const openModal = (row: RowData) => {
-        setSelected(row);
-        setCustomPaidMessage(row.paidMessage || "");
-        setModalOpen(true);
-    };
+  const totalPage = Math.ceil(rows.length / PAGE_SIZE);
+  const data = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-    const closeModal = () => {
-        setModalOpen(false);
-        setSelected(null);
-        setCustomPaidMessage("");
-    };
+  const openModal = (row: RowData) => {
+    setSelected(row);
+    setCustomPaidMessage(row.paidMessage || "");
+    setModalOpen(true);
+  };
 
-    // เพิ่มฟังก์ชันสำหรับอัปเดตสถานะและข้อความ
-    async function updateStatus(id: string, status: string, paidMessage?: string) {
-        await fetch(`/api/link/${id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                status,
-                statusChangedAt: new Date().toISOString(),
-                ...(paidMessage ? { paidMessage } : {})
-            })
-        });
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelected(null);
+    setCustomPaidMessage("");
+  };
+
+  const openEditModal = (row: RowData) => {
+    setSelected(row);
+    setEditData(row);
+    setEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditModalOpen(false);
+    setSelected(null);
+    setEditData({});
+  };
+
+  // เพิ่มฟังก์ชันสำหรับอัปเดตสถานะและข้อความ
+  async function updateStatus(
+    id: string,
+    status: string,
+    paidMessage?: string,
+  ) {
+    await fetch(`/api/link/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status,
+        statusChangedAt: new Date().toISOString(),
+        ...(paidMessage ? { paidMessage } : {}),
+      }),
+    });
+  }
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selected) return;
+
+    try {
+      await fetch(`/api/link/${selected._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editData),
+      });
+      closeEditModal();
+      fetchRows();
+    } catch (error) {
+      console.error("Failed to update data:", error);
+      alert("Failed to update data");
     }
+  };
 
-    return (
-        <div className="max-w-6xl mx-auto mt-10 p-6 bg-white rounded shadow border border-gray-200">
-            {/* ปุ่มไปหน้าสร้าง Link และปุ่ม Refresh */}
-            <div className="mt-8 text-center flex justify-between items-center">
-                <a
-                    href="/admin"
-                    className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold"
-                >
-                    ไปหน้าสร้าง Link
-                </a>
-                <button
-                    className="inline-flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded font-semibold ml-2"
-                    onClick={fetchRows}
-                    disabled={refreshing}
-                >
-                    {refreshing ? (
-                        <svg className="animate-spin h-5 w-5 mr-2 text-gray-600" viewBox="0 0 24 24">
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                                fill="none"
-                            />
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
-                            />
-                        </svg>
-                    ) : (
-                        <svg
-                            className="h-5 w-5 mr-2 text-gray-600"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M4 4v5h.582M20 20v-5h-.581M5.21 17.293A8 8 0 1112 20v-1"
-                            />
-                        </svg>
-                    )}
-                    รีเฟรช
-                </button>
-            </div>
-            <h2 className="text-2xl font-bold mb-6">รายการสร้าง Link</h2>
+  const StatusBadge = ({ status }: { status: string }) => {
+    switch (status) {
+      case "000":
+        return <span className="font-semibold text-yellow-600">รอแนบสลิป</span>;
+      case "100":
+        return <span className="font-semibold text-blue-600">รอตรวจสอบ</span>;
+      case "200":
+        return (
+          <span className="font-semibold text-green-600">ตรวจสอบผ่าน</span>
+        );
+      case "201":
+        return (
+          <span className="font-semibold text-green-700">ตรวจสอบผ่าน*</span>
+        );
+      case "300":
+        return (
+          <span className="font-semibold text-red-600">ตรวจสอบไม่ผ่าน</span>
+        );
+      case "301":
+        return <span className="font-semibold text-gray-600">ยกเลิก Link</span>;
+      default:
+        return <span className="font-semibold text-gray-500">ไม่ระบุ</span>;
+    }
+  };
 
-            <div className="overflow-x-auto">
-                <table className="min-w-full border text-sm">
-                    <thead>
-                        <tr className="bg-gray-100">
-                            <th className="border px-2 py-2">ID</th>
-                            <th className="border px-2 py-2">Link</th>
-                            <th className="border px-2 py-2">วันที่สร้าง</th>
-                            <th className="border px-2 py-2">ชื่อ</th>
-                            <th className="border px-2 py-2">จำนวนเงิน</th>
-                            <th className="border px-2 py-2">สถานะ</th>
-                            <th className="border px-2 py-2">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan={7} className="text-center py-8">
-                                    กำลังโหลดข้อมูล...
-                                </td>
-                            </tr>
-                        ) : data.length === 0 ? (
-                            <tr>
-                                <td colSpan={7} className="text-center py-8">
-                                    ไม่พบข้อมูล
-                                </td>
-                            </tr>
-                        ) : (
-                            data.map((row, idx) => (
-                                <tr key={row._id} className="hover:bg-gray-50">
-                                    <td className="border px-2 py-1 text-center">{(page - 1) * PAGE_SIZE + idx + 1}</td>
-                                    <td className="border px-2 py-1">
-                                        <a href={`/?id=${row._id}`} className="text-blue-700 underline" target="_blank">
-                                            LINK
-                                        </a>
-                                    </td>
-                                    <td className="border px-2 py-1 text-center">
-                                        {new Date(row.createdAt).toLocaleString()}
-                                    </td>
-                                    <td className="border px-2 py-1">{row.name}</td>
-                                    <td className="border px-2 py-1 text-right">{row.amount.toLocaleString()} บาท</td>
-                                    <td className="border px-2 py-1 text-center">
-                                        {row.status === "000" && (
-                                            <span className="text-yellow-600 font-semibold">รอแนบสลิป</span>
-                                        )}
-                                        {row.status === "100" && (
-                                            <span className="text-blue-600 font-semibold">รอตรวจสอบ</span>
-                                        )}
-                                        {row.status === "200" && "ตรวจสอบผ่าน"}
-                                        {row.status === "201" && "ตรวจสอบผ่าน*"}
-                                        {row.status === "300" && (
-                                            <span className="text-red-600 font-semibold">ตรวจสอบไม่ผ่าน</span>
-                                        )}
-                                        {row.status === "301" && (
-                                            <span className="text-gray-600 font-semibold">ยกเลิก Link</span>
-                                        )}
-                                    </td>
-                                    <td className="border px-2 py-1 text-center">
-                                        <button
-                                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                                            onClick={() => openModal(row)}
-                                        >
-                                            ดูรายละเอียด
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-            {/* Paging */}
-            <div className="flex justify-between items-center mt-4">
-                <button
-                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                >
-                    ก่อนหน้า
-                </button>
-                <span>
-                    หน้า {page} / {totalPage}
-                </span>
-                <button
-                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                    onClick={() => setPage((p) => Math.min(totalPage, p + 1))}
-                    disabled={page === totalPage}
-                >
-                    ถัดไป
-                </button>
-            </div>
-
-            {/* Modal */}
-            {modalOpen && selected && (
-                <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-                        <button
-                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                            onClick={closeModal}
-                        >
-                            ✕
-                        </button>
-                        <h3 className="text-xl font-bold mb-4">รายละเอียด</h3>
-                        <div className="mb-2">
-                            <b>ID:</b> {selected._id}
-                        </div>
-                        <div className="mb-2">
-                            <b>Link:</b>{" "}
-                            <a href={`/?id=${selected._id}`} className="text-blue-700 underline" target="_blank">
-                                LINK
-                            </a>
-                        </div>
-                        <div className="mb-2">
-                            <b>วันที่สร้าง:</b> {new Date(selected.createdAt).toLocaleString()}
-                        </div>
-                        <div className="mb-2">
-                            <b>ชื่อ:</b> {selected.name}
-                        </div>
-                        <div className="mb-2">
-                            <b>จำนวนเงิน:</b> {selected.amount.toLocaleString()} บาท
-                        </div>
-                        <div className="mb-2">
-                            <b>สถานะ:</b> {selected.status === "000" && "รอแนบสลิป"}
-                            {selected.status === "100" && "รอตรวจสอบ"}
-                            {selected.status === "200" && "ตรวจสอบผ่าน"}
-                            {selected.status === "201" && "ตรวจสอบผ่าน*"}
-                            {selected.status === "300" && "ตรวจสอบไม่ผ่าน"}
-                            {selected.status === "301" && "ยกเลิก Link"}
-                        </div>
-                        {selected.slip && (
-                            <div className="mb-2">
-                                <b>สลิปโอนเงิน:</b>
-                                <Image
-                                    src={selected.slip}
-                                    alt="slip"
-                                    className="mt-2 border rounded max-h-60"
-                                    width={180}
-                                    height={180}
-                                />
-                            </div>
-                        )}
-
-                        {/* Textbox สำหรับข้อความตรวจสอบผ่าน */}
-                        <div className="mt-4">
-                            <label className="block font-semibold mb-2">
-                                ข้อความเมื่อ `ตรวจสอบผ่าน` (ถ้าไม่กรอกจะใช้ค่าเริ่มต้น)
-                            </label>
-                            <textarea
-                                className="border rounded p-2 w-full"
-                                rows={2}
-                                placeholder={DEFAULT_PAID_MESSAGE}
-                                value={customPaidMessage}
-                                onChange={(e) => setCustomPaidMessage(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="flex gap-2 mt-6">
-                            {/* ตรวจสอบผ่าน */}
-                            <button
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded font-semibold"
-                                onClick={async () => {
-                                    await updateStatus(
-                                        selected._id,
-                                        customPaidMessage.trim() ? "201" : "200",
-                                        customPaidMessage.trim() ? customPaidMessage : DEFAULT_PAID_MESSAGE
-                                    );
-                                    closeModal();
-                                    fetchRows(); // รีเฟรชตาราง
-                                }}
-                            >
-                                ตรวจสอบผ่าน
-                            </button>
-                            {/* ตรวจสอบไม่ผ่าน */}
-                            <button
-                                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded font-semibold"
-                                onClick={async () => {
-                                    await updateStatus(selected._id, "300");
-                                    closeModal();
-                                    fetchRows(); // รีเฟรชตาราง
-                                }}
-                            >
-                                ตรวจสอบไม่ผ่าน
-                            </button>
-                            {/* ยกเลิกลิงค์ */}
-                            <button
-                                className="flex-1 bg-gray-500 hover:bg-gray-700 text-white py-2 rounded font-semibold"
-                                onClick={async () => {
-                                    await updateStatus(selected._id, "301");
-                                    closeModal();
-                                    fetchRows(); // รีเฟรชตาราง
-                                }}
-                            >
-                                ยกเลิกลิงค์
-                            </button>
-                        </div>
-                    </div>
-                </div>
+  return (
+    <div className="mx-auto mt-4 w-full max-w-7xl rounded border border-gray-200 bg-white p-4 shadow md:mt-10 md:p-6">
+      <div className="flex flex-col items-stretch justify-between gap-4 md:flex-row md:items-center">
+        <h2 className="text-xl font-bold md:text-2xl">รายการสร้าง Link</h2>
+        <div className="flex items-center justify-end gap-2">
+          <a
+            href="/admin"
+            className="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            สร้าง Link
+          </a>
+          <button
+            className="inline-flex items-center rounded bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-300"
+            onClick={fetchRows}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <svg
+                className="mr-2 -ml-1 h-5 w-5 animate-spin text-gray-600"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V8l3-3-3-3v4a8 8 0 00-8 8h4z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="mr-2 -ml-1 h-5 w-5 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 4v5h.582M20 20v-5h-.581M5.21 17.293A8 8 0 1112 20v-1"
+                />
+              </svg>
             )}
+            รีเฟรช
+          </button>
         </div>
-    );
+      </div>
+
+      {/* Mobile and Desktop Layout */}
+      <div className="mt-6">
+        {loading ? (
+          <div className="py-8 text-center">กำลังโหลดข้อมูล...</div>
+        ) : data.length === 0 ? (
+          <div className="py-8 text-center">ไม่พบข้อมูล</div>
+        ) : (
+          <div className="space-y-4 md:hidden">
+            {data.map((row) => (
+              <div
+                key={row._id}
+                className="rounded-lg border bg-white p-4 shadow-sm"
+              >
+                <div className="flex justify-between">
+                  <div className="font-bold text-gray-800">{row.name}</div>
+                  <div className="text-sm text-gray-500">
+                    {new Date(row.createdAt).toLocaleDateString("th-TH")}
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="text-lg font-semibold text-indigo-600">
+                    {row.amount.toLocaleString()} บาท
+                  </div>
+                  <StatusBadge status={row.status} />
+                </div>
+                <div className="mt-4 flex justify-end gap-2">
+                  <a
+                    href={`/invoice?id=${row._id}`}
+                    className="text-sm text-blue-600 underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    ดู Link
+                  </a>
+                  <button
+                    className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700"
+                    onClick={() => openModal(row)}
+                  >
+                    รายละเอียด
+                  </button>
+                  <button
+                    className="rounded bg-yellow-500 px-3 py-1 text-xs text-white hover:bg-yellow-600"
+                    onClick={() => openEditModal(row)}
+                  >
+                    แก้ไข
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="hidden overflow-x-auto md:block">
+          <table className="min-w-full border text-sm">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border px-2 py-2">ID</th>
+                <th className="border px-2 py-2">Link</th>
+                <th className="border px-2 py-2">วันที่สร้าง</th>
+                <th className="border px-2 py-2">ชื่อ</th>
+                <th className="border px-2 py-2">จำนวนเงิน</th>
+                <th className="border px-2 py-2">สถานะ</th>
+                <th className="border px-2 py-2">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((row, idx) => (
+                <tr key={row._id} className="hover:bg-gray-50">
+                  <td className="border px-2 py-1 text-center">
+                    {(page - 1) * PAGE_SIZE + idx + 1}
+                  </td>
+                  <td className="border px-2 py-1">
+                    <a
+                      href={`/invoice?id=${row._id}`}
+                      className="text-blue-700 underline"
+                      target="_blank"
+                    >
+                      LINK
+                    </a>
+                  </td>
+                  <td className="border px-2 py-1 text-center">
+                    {new Date(row.createdAt).toLocaleString()}
+                  </td>
+                  <td className="border px-2 py-1">{row.name}</td>
+                  <td className="border px-2 py-1 text-right">
+                    {row.amount.toLocaleString()} บาท
+                  </td>
+                  <td className="border px-2 py-1 text-center">
+                    <StatusBadge status={row.status} />
+                  </td>
+                  <td className="border px-2 py-1 text-center">
+                    <button
+                      className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700"
+                      onClick={() => openModal(row)}
+                    >
+                      ดูรายละเอียด
+                    </button>
+                    <button
+                      className="ml-2 rounded bg-yellow-500 px-3 py-1 text-xs text-white hover:bg-yellow-600"
+                      onClick={() => openEditModal(row)}
+                    >
+                      แก้ไข
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Paging */}
+      <div className="mt-4 flex items-center justify-between">
+        <button
+          className="rounded bg-gray-200 px-3 py-1 hover:bg-gray-300 disabled:opacity-50"
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={page === 1}
+        >
+          ก่อนหน้า
+        </button>
+        <span>
+          หน้า {page} / {totalPage}
+        </span>
+        <button
+          className="rounded bg-gray-200 px-3 py-1 hover:bg-gray-300 disabled:opacity-50"
+          onClick={() => setPage((p) => Math.min(totalPage, p + 1))}
+          disabled={page === totalPage}
+        >
+          ถัดไป
+        </button>
+      </div>
+
+      {/* Details Modal */}
+      {modalOpen && selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-lg max-h-[90vh] overflow-y-auto">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              onClick={closeModal}
+            >
+              ✕
+            </button>
+            <h3 className="mb-4 text-xl font-bold">รายละเอียด</h3>
+            <div className="space-y-2">
+              <div>
+                <b>ID:</b> {selected._id}
+              </div>
+              <div>
+                <b>Link:</b>{" "}
+                <a
+                  href={`/invoice?id=${selected._id}`}
+                  className="text-blue-700 underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  LINK
+                </a>
+              </div>
+              <div>
+                <b>วันที่สร้าง:</b>{" "}
+                {new Date(selected.createdAt).toLocaleString()}
+              </div>
+              <div>
+                <b>ชื่อ:</b> {selected.name}
+              </div>
+              <div>
+                <b>จำนวนเงิน:</b> {selected.amount.toLocaleString()} บาท
+              </div>
+              <div>
+                <b>สถานะ:</b> <StatusBadge status={selected.status} />
+              </div>
+            </div>
+            {selected.slip && (
+              <div className="mt-4">
+                <b>สลิปโอนเงิน:</b>
+                <div className="relative mt-2 w-full max-w-xs mx-auto">
+                  <Image
+                    src={selected.slip}
+                    alt="slip"
+                    width={400}
+                    height={800}
+                    className="rounded border object-contain w-full h-auto"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="mt-4">
+              <label className="mb-2 block font-semibold">
+                ข้อความเมื่อ `ตรวจสอบผ่าน` (ถ้าไม่กรอกจะใช้ค่าเริ่มต้น)
+              </label>
+              <textarea
+                className="w-full rounded border p-2"
+                rows={2}
+                placeholder={DEFAULT_PAID_MESSAGE}
+                value={customPaidMessage}
+                onChange={(e) => setCustomPaidMessage(e.target.value)}
+              />
+            </div>
+            <div className="mt-6 flex flex-col gap-2 md:flex-row">
+              <button
+                className="flex-1 rounded bg-green-600 py-2 font-semibold text-white hover:bg-green-700"
+                onClick={async () => {
+                  await updateStatus(
+                    selected._id,
+                    customPaidMessage.trim() ? "201" : "200",
+                    customPaidMessage.trim()
+                      ? customPaidMessage
+                      : DEFAULT_PAID_MESSAGE,
+                  );
+                  closeModal();
+                  fetchRows();
+                }}
+              >
+                ตรวจสอบผ่าน
+              </button>
+              <button
+                className="flex-1 rounded bg-red-600 py-2 font-semibold text-white hover:bg-red-700"
+                onClick={async () => {
+                  await updateStatus(selected._id, "300");
+                  closeModal();
+                  fetchRows();
+                }}
+              >
+                ตรวจสอบไม่ผ่าน
+              </button>
+              <button
+                className="flex-1 rounded bg-gray-500 py-2 font-semibold text-white hover:bg-gray-700"
+                onClick={async () => {
+                  await updateStatus(selected._id, "301");
+                  closeModal();
+                  fetchRows();
+                }}
+              >
+                ยกเลิกลิงค์
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editModalOpen && selected && (
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="relative h-full max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-6 shadow-lg">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              onClick={closeEditModal}
+            >
+              ✕
+            </button>
+            <h3 className="mb-4 text-xl font-bold">แก้ไขข้อมูล</h3>
+            <form onSubmit={handleUpdate}>
+              <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block font-medium">ชื่อผู้ใช้</label>
+                  <input
+                    type="text"
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={editData.name || ""}
+                    onChange={(e) =>
+                      setEditData({ ...editData, name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-medium">จำนวนเงิน</label>
+                  <input
+                    type="number"
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={editData.amount || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        amount: Number(e.target.value),
+                      })
+                    }
+                    required
+                    min={1}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-medium">
+                    ยอดที่ต้องชำระ
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={editData.outStandingBalance || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        outStandingBalance: Number(e.target.value),
+                      })
+                    }
+                    required
+                    min={1}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-medium">
+                    วันที่ครบกำหนด
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={
+                      editData.dueDate
+                        ? new Date(editData.dueDate).toISOString().split("T")[0]
+                        : ""
+                    }
+                    onChange={(e) =>
+                      setEditData({ ...editData, dueDate: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-medium">
+                    โควต้ารอบที่แล้ว
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={editData.previousQuota || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        previousQuota: Number(e.target.value),
+                      })
+                    }
+                    required
+                    min={1}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-medium">โควต้ารอบนี้</label>
+                  <input
+                    type="number"
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={editData.currentQuota || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        currentQuota: Number(e.target.value),
+                      })
+                    }
+                    required
+                    min={1}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-medium">
+                    โควต้ารอบต่อไป
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={editData.nextQuota || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        nextQuota: Number(e.target.value),
+                      })
+                    }
+                    required
+                    min={1}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-medium">วงเงินเพิ่ม</label>
+                  <input
+                    type="number"
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={editData.extraQuota || ""}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        extraQuota: Number(e.target.value),
+                      })
+                    }
+                    required
+                    min={1}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="mb-1 block font-medium">Paid Message</label>
+                  <input
+                    type="text"
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={editData.paidMessage || ""}
+                    onChange={(e) =>
+                      setEditData({ ...editData, paidMessage: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block font-medium">Status</label>
+                  <input
+                    type="text"
+                    className="w-full rounded border border-gray-300 px-3 py-2"
+                    value={editData.status || ""}
+                    onChange={(e) =>
+                      setEditData({ ...editData, status: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="mt-6 w-full rounded bg-green-600 py-2 font-semibold text-white hover:bg-green-700"
+              >
+                บันทึกการแก้ไข
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
