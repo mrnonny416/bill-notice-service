@@ -47,7 +47,7 @@ export default function AdminPage() {
     e.preventDefault();
     // อ่านค่าจาก Environment Variables เพื่อความปลอดภัย
     const adminUser = process.env.NEXT_PUBLIC_ADMIN_USER || "admin";
-    const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASS || "1234";
+    const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASS || "778899";
 
     if (username === adminUser && password === adminPass) {
       setIsLoggedIn(true);
