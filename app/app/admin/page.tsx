@@ -45,8 +45,11 @@ export default function AdminPage() {
   // Mock login handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // ตัวอย่างตรวจสอบ username/password แบบง่าย
-    if (username === "admin" && password === "1234") {
+    // อ่านค่าจาก Environment Variables เพื่อความปลอดภัย
+    const adminUser = process.env.NEXT_PUBLIC_ADMIN_USER || "admin";
+    const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASS || "1234";
+
+    if (username === adminUser && password === adminPass) {
       setIsLoggedIn(true);
     } else {
       alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
