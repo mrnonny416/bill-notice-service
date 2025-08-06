@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import React, { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import BottomMenu from '@/components/BottomMenu';
-import FloatingButton from '@/components/FloatingButton';
-import { LuClock3 } from 'react-icons/lu';
-import { FaCheckCircle } from 'react-icons/fa';
-import { IoAlertCircle } from 'react-icons/io5';
+import Image from "next/image";
+import React, { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import BottomMenu from "@/components/BottomMenu";
+import FloatingButton from "@/components/FloatingButton";
+import { LuClock3 } from "react-icons/lu";
+import { FaCheckCircle } from "react-icons/fa";
+import { IoAlertCircle } from "react-icons/io5";
 type BillData = {
   name: string;
   amount: number;
@@ -18,16 +18,25 @@ type BillData = {
   paidMessage?: string;
   transactionId?: string;
   promptPayId?: string; // Optional field for PromptPay ID
+  qrAccessedAt?: string;
 };
 
 function BillNoticeContent() {
   const searchParams = useSearchParams();
-  const id = searchParams.get('id');
-  const amount = searchParams.get('amount');
+  const id = searchParams.get("id");
+  const amount = searchParams.get("amount");
 
   const [data, setData] = useState<BillData | null>(null);
   const [loading, setLoading] = useState(true);
-  // const [slipUploaded, setSlipUploaded] = useState(false);
+  const [promptpayNumber, setPromptpayNumber] = useState("");
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [qrExpired, setQrExpired] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/promptpay")
+      .then((res) => res.json())
+      .then((data) => setPromptpayNumber(data.promptpayNumber));
+  }, []);
 
   const fetchData = async () => {
     if (!id) {
@@ -41,17 +50,20 @@ function BillNoticeContent() {
       setData({
         name: bill.name,
         amount: parseFloat(amount || bill.amount.toString()),
-        accountNumber: bill.accountNumber || '123-4-56789-0',
-        bankDetails: bill.bankDetails || 'ธนาคารกรุงเทพ สาขาสีลม',
-        qrCodeUrl: bill.qrCodeUrl || '/thpp.png',
+        accountNumber: bill.accountNumber || "123-4-56789-0",
+        bankDetails: bill.bankDetails || "ธนาคารกรุงเทพ สาขาสีลม",
+        qrCodeUrl:
+          promptpayNumber && bill.amount
+            ? `https://promptpay.io/${promptpayNumber}/${amount}`
+            : "/thpp.png",
         status: bill.status,
         paidMessage: bill.paidMessage,
-        transactionId: bill.transactionId || '255502025025025020520',
-        promptPayId: bill.promptPayId || '1234567890', // Optional field for PromptPay ID
+        transactionId: bill.transactionId || "xxxx-xxxx-xxxx-xxxx",
+        promptPayId: promptpayNumber || "1234567890", // Optional field for PromptPay ID
+        qrAccessedAt: bill.qrAccessedAt,
       });
-      // setSlipUploaded(["100", "200", "201", "300"].includes(bill.status));
     } catch (error) {
-      console.error('Failed to fetch bill data:', error);
+      console.error("Failed to fetch bill data:", error);
       setData(null);
     } finally {
       setLoading(false);
@@ -59,8 +71,29 @@ function BillNoticeContent() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [id]);
+    if (promptpayNumber) {
+      fetchData();
+    }
+  }, [id, promptpayNumber, fetchData]);
+
+  useEffect(() => {
+    if (data?.qrAccessedAt) {
+      const interval = setInterval(() => {
+        const now = new Date().getTime();
+        const accessedAt = new Date(data.qrAccessedAt!).getTime();
+        const diff = now - accessedAt;
+        const remaining = 5 * 60 * 1000 - diff;
+        if (remaining > 0) {
+          setTimeLeft(Math.floor(remaining / 1000));
+        } else {
+          setTimeLeft(0);
+          setQrExpired(true);
+          clearInterval(interval);
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [data?.qrAccessedAt]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0] && id) {
@@ -68,18 +101,16 @@ function BillNoticeContent() {
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const slipBase64 = ev.target?.result as string;
-        await fetch(`/api/link/${id}`,
-          {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              slip: slipBase64,
-              slipUploadedAt: new Date().toISOString(),
-              status: '100',
-              statusChangedAt: new Date().toISOString(),
-            }),
-          });
-        // setSlipUploaded(true);
+        await fetch(`/api/link/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slip: slipBase64,
+            slipUploadedAt: new Date().toISOString(),
+            status: "100",
+            statusChangedAt: new Date().toISOString(),
+          }),
+        });
         fetchData();
       };
       reader.readAsDataURL(file);
@@ -97,7 +128,7 @@ function BillNoticeContent() {
   }
 
   // ถ้าไม่มีข้อมูลหรือสถานะ 301
-  if (!data || data.status === '301') {
+  if (!data || data.status === "301") {
     return (
       <div className="mx-auto mt-10 max-w-md">
         <div className="flex flex-col items-center p-3">
@@ -139,7 +170,7 @@ function BillNoticeContent() {
   }
 
   // เฉพาะสถานะ "รอตรวจสอบ"
-  if (data.status === '100') {
+  if (data.status === "100") {
     return (
       <div className="mx-auto mt-10 max-w-md">
         <div className="flex flex-col items-center p-3">
@@ -191,7 +222,7 @@ function BillNoticeContent() {
   }
 
   // เฉพาะสถานะชำระแล้ว
-  if (data.status === '200' || data.status === '201') {
+  if (data.status === "200" || data.status === "201") {
     return (
       <div className="mx-auto mt-10 max-w-md">
         <div className="flex flex-col items-center p-3">
@@ -204,9 +235,9 @@ function BillNoticeContent() {
             </div>
           </div>
           <div className="text-md mb-2 font-bold text-[#222]">
-            {data.status === '201' && data.paidMessage
+            {data.status === "201" && data.paidMessage
               ? data.paidMessage
-              : 'คุณไม่เหลือยอดค้างชำระสำหรับใบแจ้งหนี้นี้'}
+              : "คุณไม่เหลือยอดค้างชำระสำหรับใบแจ้งหนี้นี้"}
           </div>
           <div className="font flex w-full">
             <div className="mb-2 ml-2 text-[#222]">ความคืบหน้าการชำระเงิน</div>
@@ -249,7 +280,7 @@ function BillNoticeContent() {
   }
 
   // ตรวจสอบไม่ผ่าน
-  if (data.status === '300') {
+  if (data.status === "300") {
     return (
       <div className="mx-auto mt-10 max-w-md">
         <div className="flex flex-col items-center p-3">
@@ -288,21 +319,43 @@ function BillNoticeContent() {
         <h2 className="text-center text-[12px] text-orange-600">
           หมายเหตุ: หน้านี้จ่ายได้เพียงครั้งเดียว
         </h2>
-        <div className="text-cyan-700">หมดอายุ</div>
+        <div className="text-cyan-700">
+          {timeLeft === null
+            ? "กำลังตรวจสอบเวลา..."
+            : qrExpired
+            ? <span className="font-bold text-red-600">QR Code หมดอายุแล้ว</span>
+            : `หมดอายุใน: ${Math.floor(timeLeft / 60)}:${("0" + (timeLeft % 60)).slice(-2)}`}
+        </div>
         <div className="text-sm font-bold text-green-600">
           *** แสกนคิวอาร์โค้ดเพื่อชำระเงิน ***
         </div>
         <div className="my-1">
-          <a href={data.qrCodeUrl} download="data.qrCodeUrl" className="">
-            <Image
-              src={data.qrCodeUrl}
-              alt="QR Code Payment"
-              width={300}
-              height={300}
-            />
-          </a>
+          <Image
+            src="/qr-header.png"
+            alt="QR Header"
+            width={300}
+            height={50}
+          />
+          {timeLeft !== null && !qrExpired && data.qrCodeUrl !== "/thpp.png" ? (
+            <a href={data.qrCodeUrl} download="qrcode.png" className="">
+              <Image
+                src={data.qrCodeUrl}
+                alt="QR Code Payment"
+                width={300}
+                height={300}
+              />
+            </a>
+          ) : (
+            <div className="flex h-[300px] w-[300px] items-center justify-center bg-gray-100 text-gray-500">
+              {timeLeft === null
+                ? "กำลังตรวจสอบ..."
+                : qrExpired
+                ? "QR Code หมดอายุแล้ว"
+                : "กำลังสร้าง QR Code..."}
+            </div>
+          )}
         </div>
-        <div className="">หมายเลขธุรกรรม: {data.transactionId}</div>
+        {/* <div className="">หมายเลขธุรกรรม: {data.transactionId}</div> */}
         <div className="">จำนวนเงิน: THB {data.amount.toLocaleString()}</div>
         <div className="">
           หมายเลขพร้อมเพย์:

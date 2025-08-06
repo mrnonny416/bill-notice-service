@@ -13,6 +13,12 @@ export async function GET(
   if (!doc) {
     return NextResponse.json({ error: "ไม่พบข้อมูล" }, { status: 404 });
   }
+
+  if (!doc.qrAccessedAt) {
+    doc.qrAccessedAt = new Date();
+    await doc.save();
+  }
+
   return NextResponse.json(doc);
 }
 

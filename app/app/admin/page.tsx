@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
 interface LinkData {
@@ -42,17 +42,36 @@ export default function AdminPage() {
   const [extraQuota, setExtraQuota] = useState("");
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
 
-  // Mock login handler
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // อ่านค่าจาก Environment Variables เพื่อความปลอดภัย
-    const adminUser = process.env.NEXT_PUBLIC_ADMIN_USER || "admin";
-    const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASS || "778899";
-
-    if (username === adminUser && password === adminPass) {
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
       setIsLoggedIn(true);
-    } else {
-      alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+    }
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Login failed");
+      }
+
+      const { token } = await res.json();
+      localStorage.setItem("token", token);
+      setIsLoggedIn(true);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert("An unknown error occurred");
+      }
     }
   };
 
@@ -229,17 +248,11 @@ export default function AdminPage() {
           <span className="mb-2 block font-medium">Link ที่สร้าง:</span>
           <div className="flex flex-col items-center gap-2">
             <Link
-              href={
-                typeof window !== "undefined"
-                  ? window.location.origin + generatedLink
-                  : generatedLink
-              }
+              href={generatedLink}
               className="break-all text-blue-700 underline"
               target="_blank"
             >
-              {typeof window !== "undefined"
-                ? window.location.origin + generatedLink
-                : generatedLink}
+              {generatedLink}
             </Link>
             <button
               type="button"

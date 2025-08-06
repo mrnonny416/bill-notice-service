@@ -49,8 +49,7 @@ export default function AdminRequestPage() {
   // ดึงข้อมูลจาก API
   useEffect(() => {
     fetchRows();
-    // eslint-disable-next-line
-  }, []);
+    }, []);
 
   const totalPage = Math.ceil(rows.length / PAGE_SIZE);
   const data = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

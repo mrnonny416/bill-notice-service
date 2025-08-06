@@ -15,6 +15,7 @@ export interface ILink extends Document {
   currentQuota?: number;
   nextQuota?: number;
   extraQuota?: number;
+  qrAccessedAt?: Date | null;
 }
 
 const LinkSchema: Schema = new Schema(
@@ -33,6 +34,7 @@ const LinkSchema: Schema = new Schema(
     currentQuota: { type: Number },
     nextQuota: { type: Number },
     extraQuota: { type: Number },
+    qrAccessedAt: { type: Date, default: null },
   },
   { collection: "links", strict: false }
 );
