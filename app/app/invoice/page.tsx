@@ -1,10 +1,10 @@
-'use client';
-import { Suspense, useState, useEffect } from 'react';
-import { SlArrowDown } from 'react-icons/sl';
-import { BsFillInfoCircleFill } from 'react-icons/bs';
-import FloatingButton from '@/components/FloatingButton';
-import BottomMenu from '@/components/BottomMenu';
-import { useRouter, useSearchParams } from 'next/navigation';
+"use client";
+import { Suspense, useState, useEffect } from "react";
+import { SlArrowDown } from "react-icons/sl";
+import { BsFillInfoCircleFill } from "react-icons/bs";
+import FloatingButton from "@/components/FloatingButton";
+import BottomMenu from "@/components/BottomMenu";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type Props = {
   outStandingBalance: number;
@@ -20,7 +20,7 @@ function InvoiceContent() {
   const [openLimit, setOpenLimit] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const id = searchParams.get('id');
+  const id = searchParams.get("id");
 
   const [invoiceData, setInvoiceData] = useState<Props | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ function InvoiceContent() {
       try {
         const res = await fetch(`/api/link/${id}`);
         if (!res.ok) {
-          throw new Error('Failed to fetch data');
+          throw new Error("Failed to fetch data");
         }
         const linkData = await res.json();
 
@@ -49,7 +49,7 @@ function InvoiceContent() {
           extraQuota: linkData.extraQuota,
         });
       } catch (error) {
-        console.error('Failed to fetch invoice data:', error);
+        console.error("Failed to fetch invoice data:", error);
         setInvoiceData(null);
       } finally {
         setLoading(false);
@@ -83,18 +83,26 @@ function InvoiceContent() {
             className="relative flex w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-3xl py-4 text-center text-white"
             style={{
               backgroundImage: "url('/card-bg-sportlight.png')",
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              minHeight: '180px',
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              minHeight: "180px",
             }}
           >
-            <p className="text-2xl">ยอดที่ต้องชำระ</p>
-            <p className="text-4xl font-bold">
-              ฿ {invoiceData.outStandingBalance.toLocaleString('th-TH')}
+            <p className="text-xl">ยอดที่ต้องชำระ</p>
+            <p className="text-3xl font-semibold">
+              ฿{" "}
+              {invoiceData.outStandingBalance.toLocaleString("th-TH", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </p>
             <p className="text-md">
-              วันที่ครบกำหนด: {invoiceData.dueDate.toLocaleDateString('th-TH')}
+              วันที่ครบกำหนด:{" "}
+              {invoiceData.dueDate
+                .toLocaleDateString("th-TH")
+                .split("/")
+                .join("-")}
             </p>
             <button className="text-md w-fit rounded-4xl bg-orange-300 px-4 py-2">
               {(() => {
@@ -116,15 +124,39 @@ function InvoiceContent() {
               ข้อมูลเงินกู้
               <span
                 className={`transition-transform ${
-                  openInfo ? 'rotate-180' : ''
+                  openInfo ? "rotate-180" : ""
                 }`}
               >
                 <SlArrowDown />
               </span>
             </button>
             {openInfo && (
-              <div className="flex w-full flex-col px-4 py-3">
-                ข้อมูลเงินกู้
+              <div className="flex w-full flex-row justify-between px-4 py-3 text-sm">
+                <div className="flex flex-col items-start gap-1 text-gray-500">
+                  <div>กลไกปล่อยเงินกู้</div>
+                  <div>ยอดเงินที่สมัครกู้</div>
+                  <div>วันครบกำหนด</div>
+                  <div>หลักฐานการโอนเงิน</div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <div>Lend Pro</div>
+                  <div>
+                    ฿{" "}
+                    {invoiceData.outStandingBalance.toLocaleString("th-TH", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </div>
+                  <div>
+                    {invoiceData.dueDate
+                      .toLocaleDateString("th-TH")
+                      .split("/")
+                      .join("-")}
+                  </div>
+                  <div className="rounded-full border-1 border-indigo-600 px-1 text-xs text-indigo-600">
+                    หลักฐานการโอนเงิน
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -137,7 +169,7 @@ function InvoiceContent() {
               ชำระเงินกู้คืน วงเงินเพิ่ม
               <span
                 className={`transition-transform ${
-                  openLimit ? 'rotate-180' : ''
+                  openLimit ? "rotate-180" : ""
                 }`}
               >
                 <SlArrowDown />
@@ -150,9 +182,9 @@ function InvoiceContent() {
                   <div
                     className="absolute -top-2 left-4 h-0 w-0"
                     style={{
-                      borderLeft: '10px solid transparent',
-                      borderRight: '10px solid transparent',
-                      borderBottom: '10px solid #e5e7eb',
+                      borderLeft: "10px solid transparent",
+                      borderRight: "10px solid transparent",
+                      borderBottom: "10px solid #e5e7eb",
                     }}
                   />
                   <p className="text-sm text-slate-600">
@@ -174,13 +206,13 @@ function InvoiceContent() {
                   </div>
                   <div className="text-bold flex flex-col gap-3 font-bold">
                     <div className="text-slate-600">
-                      ฿ {invoiceData.previousQuota.toLocaleString('th-TH')}
+                      ฿ {invoiceData.previousQuota.toLocaleString("th-TH")}
                     </div>
                     <div className="text-slate-600">
-                      ฿ {invoiceData.currentQuota.toLocaleString('th-TH')}
+                      ฿ {invoiceData.currentQuota.toLocaleString("th-TH")}
                     </div>
                     <div className="text-slate-600">
-                      ฿ {invoiceData.nextQuota.toLocaleString('th-TH')}
+                      ฿ {invoiceData.nextQuota.toLocaleString("th-TH")}
                     </div>
                   </div>
                 </div>
@@ -188,7 +220,7 @@ function InvoiceContent() {
                   <BsFillInfoCircleFill color="orange" />
                   ชำระตรงเวลา ขอกู้ใหม่ได้
                   <p className="text-red-500">
-                    ฿ {invoiceData.extraQuota.toLocaleString('th-TH')}
+                    ฿ {invoiceData.extraQuota.toLocaleString("th-TH")}
                   </p>
                 </div>
               </div>
