@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectDB as connectToDB } from "@/lib/mongodb";
@@ -20,7 +19,7 @@ export async function POST(req: NextRequest) {
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return NextResponse.json(
-        { message: "Username already exists." },
+        { message: "User already exists." },
         { status: 409 },
       );
     }
@@ -35,7 +34,7 @@ export async function POST(req: NextRequest) {
     await newUser.save();
 
     return NextResponse.json(
-      { message: "User created successfully." },
+      { message: "User registered successfully." },
       { status: 201 },
     );
   } catch (error) {

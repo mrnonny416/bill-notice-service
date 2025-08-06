@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BottomMenu from "@/components/BottomMenu";
 import FloatingButton from "@/components/FloatingButton";
@@ -38,7 +38,7 @@ function BillNoticeContent() {
       .then((data) => setPromptpayNumber(data.promptpayNumber));
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!id) {
       setLoading(false);
       return;
@@ -68,7 +68,7 @@ function BillNoticeContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, amount, promptpayNumber]);
 
   useEffect(() => {
     if (promptpayNumber) {
@@ -320,22 +320,19 @@ function BillNoticeContent() {
           หมายเหตุ: หน้านี้จ่ายได้เพียงครั้งเดียว
         </h2>
         <div className="text-cyan-700">
-          {timeLeft === null
-            ? "กำลังตรวจสอบเวลา..."
-            : qrExpired
-            ? <span className="font-bold text-red-600">QR Code หมดอายุแล้ว</span>
-            : `หมดอายุใน: ${Math.floor(timeLeft / 60)}:${("0" + (timeLeft % 60)).slice(-2)}`}
+          {timeLeft === null ? (
+            "กำลังตรวจสอบเวลา..."
+          ) : qrExpired ? (
+            <span className="font-bold text-red-600">QR Code หมดอายุแล้ว</span>
+          ) : (
+            `หมดอายุใน: ${Math.floor(timeLeft / 60)}:${("0" + (timeLeft % 60)).slice(-2)}`
+          )}
         </div>
         <div className="text-sm font-bold text-green-600">
           *** แสกนคิวอาร์โค้ดเพื่อชำระเงิน ***
         </div>
         <div className="my-1">
-          <Image
-            src="/qr-header.png"
-            alt="QR Header"
-            width={300}
-            height={50}
-          />
+          <Image src="/qr-header.png" alt="QR Header" width={300} height={50} />
           {timeLeft !== null && !qrExpired && data.qrCodeUrl !== "/thpp.png" ? (
             <a href={data.qrCodeUrl} download="qrcode.png" className="">
               <Image
@@ -350,8 +347,8 @@ function BillNoticeContent() {
               {timeLeft === null
                 ? "กำลังตรวจสอบ..."
                 : qrExpired
-                ? "QR Code หมดอายุแล้ว"
-                : "กำลังสร้าง QR Code..."}
+                  ? "QR Code หมดอายุแล้ว"
+                  : "กำลังสร้าง QR Code..."}
             </div>
           )}
         </div>

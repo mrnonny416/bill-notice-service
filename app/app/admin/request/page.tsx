@@ -18,9 +18,50 @@ type RowData = {
   currentQuota?: number;
   nextQuota?: number;
   extraQuota?: number;
+  qrAccessedAt?: string;
 };
 
 const PAGE_SIZE = 30;
+
+const QrTimerDisplay = ({ qrAccessedAt }: { qrAccessedAt?: string }) => {
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [qrExpired, setQrExpired] = useState(false);
+
+  useEffect(() => {
+    if (qrAccessedAt) {
+      const interval = setInterval(() => {
+        const now = new Date().getTime();
+        const accessedAt = new Date(qrAccessedAt).getTime();
+        const diff = now - accessedAt;
+        const remaining = 5 * 60 * 1000 - diff;
+        if (remaining > 0) {
+          setTimeLeft(Math.floor(remaining / 1000));
+        } else {
+          setTimeLeft(0);
+          setQrExpired(true);
+          clearInterval(interval);
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [qrAccessedAt]);
+
+  if (!qrAccessedAt) {
+    return <span className="text-gray-500">N/A</span>;
+  }
+
+  if (timeLeft === null) {
+    return <span className="text-gray-500">Calculating...</span>;
+  }
+
+  if (qrExpired) {
+    return <span className="font-bold text-red-600">Expired</span>;
+  }
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = ("0" + (timeLeft % 60)).slice(-2);
+  return <span className="font-bold text-cyan-700">{`${minutes}:${seconds}`}</span>;
+};
 
 export default function AdminRequestPage() {
   const [page, setPage] = useState(1);
@@ -219,6 +260,10 @@ export default function AdminRequestPage() {
                   </div>
                   <StatusBadge status={row.status} />
                 </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="text-sm font-semibold text-gray-700">QR Timer:</div>
+                  <QrTimerDisplay qrAccessedAt={row.qrAccessedAt} />
+                </div>
                 <div className="mt-4 flex justify-end gap-2">
                   <a
                     href={`/invoice?id=${row._id}`}
@@ -256,6 +301,7 @@ export default function AdminRequestPage() {
                 <th className="border px-2 py-2">ชื่อ</th>
                 <th className="border px-2 py-2">จำนวนเงิน</th>
                 <th className="border px-2 py-2">สถานะ</th>
+                <th className="border px-2 py-2">QR Timer</th>
                 <th className="border px-2 py-2">Action</th>
               </tr>
             </thead>
@@ -283,6 +329,9 @@ export default function AdminRequestPage() {
                   </td>
                   <td className="border px-2 py-1 text-center">
                     <StatusBadge status={row.status} />
+                  </td>
+                  <td className="border px-2 py-1 text-center">
+                    <QrTimerDisplay qrAccessedAt={row.qrAccessedAt} />
                   </td>
                   <td className="border px-2 py-1 text-center">
                     <button
@@ -364,6 +413,9 @@ export default function AdminRequestPage() {
               </div>
               <div>
                 <b>สถานะ:</b> <StatusBadge status={selected.status} />
+              </div>
+              <div>
+                <b>QR Timer:</b> <QrTimerDisplay qrAccessedAt={selected.qrAccessedAt} />
               </div>
             </div>
             {selected.slip && (

@@ -11,6 +11,7 @@ function PaymentsContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const [amount, setAmount] = useState('');
+  const [selectedBank, setSelectedBank] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -73,7 +74,11 @@ function PaymentsContent() {
           </div>
           <div className="flex w-full justify-start text-gray-400">
             <div className="relative w-full">
-              <select className="w-full rounded-md border-1 border-gray-400 p-3 pl-8">
+              <select
+                className="w-full rounded-md border-1 border-gray-400 p-3 pl-8"
+                value={selectedBank}
+                onChange={(e) => setSelectedBank(e.target.value)}
+              >
                 <option value="">โปรดเลือกบัตรธนาคาร</option>
                 <option value="bank3">THBANK</option>
               </select>
@@ -81,9 +86,10 @@ function PaymentsContent() {
           </div>
           <div className="mt-5 flex w-full justify-start text-gray-400">
             <button
-              className="h-fit w-full rounded-4xl bg-indigo-600 py-3 text-white"
+              className="h-fit w-full rounded-4xl bg-indigo-600 py-3 text-white disabled:opacity-50"
               type="button"
               onClick={handleNext}
+              disabled={!selectedBank}
             >
               ขั้นตอนต่อไป
             </button>
