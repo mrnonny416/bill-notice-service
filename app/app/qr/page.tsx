@@ -8,6 +8,9 @@ import FloatingButton from "@/components/FloatingButton";
 import { LuClock3 } from "react-icons/lu";
 import { FaCheckCircle } from "react-icons/fa";
 import { IoAlertCircle } from "react-icons/io5";
+import FlipClockCountdown from "@leenguyen/react-flip-clock-countdown";
+import "@leenguyen/react-flip-clock-countdown/dist/index.css";
+
 type BillData = {
   name: string;
   amount: number;
@@ -31,6 +34,7 @@ function BillNoticeContent() {
   const [promptpayNumber, setPromptpayNumber] = useState("");
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [qrExpired, setQrExpired] = useState(false);
+  const [toTime, setToTime] = useState(new Date().getTime());
 
   useEffect(() => {
     fetch("/api/admin/promptpay")
@@ -78,9 +82,12 @@ function BillNoticeContent() {
 
   useEffect(() => {
     if (data?.qrAccessedAt) {
+      const accessedAt = new Date(data.qrAccessedAt).getTime();
+      const newToTime = accessedAt + 10 * 60 * 1000;
+      setToTime(newToTime);
+
       const interval = setInterval(() => {
         const now = new Date().getTime();
-        const accessedAt = new Date(data.qrAccessedAt!).getTime();
         const diff = now - accessedAt;
         const remaining = 5 * 60 * 1000 - diff;
         if (remaining > 0) {
@@ -315,7 +322,7 @@ function BillNoticeContent() {
 
   return (
     <div className="mx-auto mt-10 max-w-md">
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center gap-2">
         <h2 className="text-center text-[12px] text-orange-600">
           หมายเหตุ: หน้านี้จ่ายได้เพียงครั้งเดียว
         </h2>
@@ -325,7 +332,31 @@ function BillNoticeContent() {
           ) : qrExpired ? (
             <span className="font-bold text-red-600">QR Code หมดอายุแล้ว</span>
           ) : (
-            `หมดอายุใน: ${Math.floor(timeLeft / 60)}:${("0" + (timeLeft % 60)).slice(-2)}`
+            <div className="flex items-center gap-2">
+              {" "}
+              หมดอายุ
+              <FlipClockCountdown
+                to={toTime}
+                showLabels={false}
+                labels={["วัน", "ชั่วโมง", "นาที", "วินาที"]}
+                labelStyle={{
+                  fontSize: "12px",
+                  fontWeight: 100,
+                  textTransform: "uppercase",
+                }}
+                digitBlockStyle={{
+                  width: 20,
+                  height: 30,
+                  fontSize: 12,
+                  background: "#5d85f5",
+                }}
+                dividerStyle={{ color: "#5d85f5", height: 0 }}
+                separatorStyle={{ color: "#5d85f5", size: "3px" }}
+                duration={0.5}
+                onComplete={() => setQrExpired(true)}
+                renderMap={[false, true, true, true]}
+              />
+            </div>
           )}
         </div>
         <div className="text-sm font-bold text-green-600">

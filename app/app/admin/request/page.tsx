@@ -33,7 +33,7 @@ const QrTimerDisplay = ({ qrAccessedAt }: { qrAccessedAt?: string }) => {
         const now = new Date().getTime();
         const accessedAt = new Date(qrAccessedAt).getTime();
         const diff = now - accessedAt;
-        const remaining = 5 * 60 * 1000 - diff;
+                const remaining = 10 * 60 * 1000 - diff;
         if (remaining > 0) {
           setTimeLeft(Math.floor(remaining / 1000));
         } else {
