@@ -8,7 +8,7 @@ export interface ILink extends Document {
   slipUploadedAt?: Date | null;
   statusChangedAt?: Date | null;
   createdAt?: Date;
-  paidMessage?: string | null; // เพิ่มตรงนี้
+  paidMessage?: string | null;
   outStandingBalance?: number;
   dueDate?: Date;
   previousQuota?: number;
@@ -16,6 +16,7 @@ export interface ILink extends Document {
   nextQuota?: number;
   extraQuota?: number;
   qrAccessedAt?: Date | null;
+  transactionId?: string | null;
 }
 
 const LinkSchema: Schema = new Schema(
@@ -27,7 +28,7 @@ const LinkSchema: Schema = new Schema(
     slipUploadedAt: { type: Date, default: null },
     statusChangedAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now },
-    paidMessage: { type: String, default: null }, // เพิ่มตรงนี้
+    paidMessage: { type: String, default: null },
     outStandingBalance: { type: Number },
     dueDate: { type: Date },
     previousQuota: { type: Number },
@@ -35,9 +36,12 @@ const LinkSchema: Schema = new Schema(
     nextQuota: { type: Number },
     extraQuota: { type: Number },
     qrAccessedAt: { type: Date, default: null },
+    transactionId: { type: String, default: null },
   },
   { collection: "links", strict: false }
 );
 
-export const LinkModel: Model<ILink> =
+const LinkModel: Model<ILink> =
   mongoose.models.Link || mongoose.model<ILink>("Link", LinkSchema);
+
+export default LinkModel;

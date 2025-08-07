@@ -12,6 +12,7 @@ const AdminMenu = () => {
     { href: '/admin/request', label: 'Requests' },
     { href: '/admin/promptpay', label: 'PromptPay Settings' },
     { href: '/admin/register', label: 'Register New Admin' },
+    { href: '/admin/line-setting', label: 'Line Settings' },
   ];
 
   return (

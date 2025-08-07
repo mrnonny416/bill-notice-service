@@ -19,6 +19,7 @@ type RowData = {
   nextQuota?: number;
   extraQuota?: number;
   qrAccessedAt?: string;
+  transactionId?: string;
 };
 
 const PAGE_SIZE = 30;
@@ -631,14 +632,14 @@ export default function AdminRequestPage() {
                     min={1}
                   />
                 </div>
-                <div className="md:col-span-2">
-                  <label className="mb-1 block font-medium">Paid Message</label>
+                <div>
+                  <label className="mb-1 block font-medium">Transaction ID</label>
                   <input
                     type="text"
                     className="w-full rounded border border-gray-300 px-3 py-2"
-                    value={editData.paidMessage || ""}
+                    value={editData.transactionId || ''}
                     onChange={(e) =>
-                      setEditData({ ...editData, paidMessage: e.target.value })
+                      setEditData({ ...editData, transactionId: e.target.value })
                     }
                   />
                 </div>

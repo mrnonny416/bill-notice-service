@@ -383,7 +383,7 @@ function BillNoticeContent() {
             </div>
           )}
         </div>
-        {/* <div className="">หมายเลขธุรกรรม: {data.transactionId}</div> */}
+        <div className="">หมายเลขธุรกรรม: {data.transactionId ? data.transactionId : 'ยังไม่พบธุรกรรม'}</div>
         <div className="">จำนวนเงิน: THB {data.amount.toLocaleString()}</div>
         <div className="">
           หมายเลขพร้อมเพย์:
