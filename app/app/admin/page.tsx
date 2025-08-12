@@ -19,9 +19,17 @@ interface LinkData {
 }
 
 async function saveLinkToDB(data: LinkData) {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("ไม่พบ Token. กรุณาเข้าสู่ระบบใหม่");
+  }
+
   const res = await fetch("/api/link", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error("บันทึกข้อมูลไม่สำเร็จ");

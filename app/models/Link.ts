@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
+import { IUser } from "./User";
 
 export interface ILink extends Document {
   name: string;
@@ -17,6 +18,7 @@ export interface ILink extends Document {
   extraQuota?: number;
   qrAccessedAt?: Date | null;
   transactionId?: string | null;
+  createdBy: IUser["_id"];
 }
 
 const LinkSchema: Schema = new Schema(
@@ -37,6 +39,11 @@ const LinkSchema: Schema = new Schema(
     extraQuota: { type: Number },
     qrAccessedAt: { type: Date, default: null },
     transactionId: { type: String, default: null },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { collection: "links", strict: false }
 );

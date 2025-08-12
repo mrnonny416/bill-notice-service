@@ -1,5 +1,4 @@
-'use client';
-
+"use client";
 import AdminMenu from '@/components/AdminMenu';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -28,6 +27,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setLoading(false);
   }, [router, pathname]);
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      localStorage.removeItem('token');
+      router.push('/admin/login');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100">
@@ -36,16 +48,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  if (!isAuthenticated) {
-    return null; // Or a message like "Redirecting..."
-  }
-
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      <AdminMenu />
+      <AdminMenu isAuthenticated={isAuthenticated} onLogout={handleLogout} />
       <main className="flex-1 p-6 overflow-y-auto">
         {children}
       </main>
     </div>
   );
 }
+

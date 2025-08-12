@@ -20,6 +20,10 @@ type RowData = {
   extraQuota?: number;
   qrAccessedAt?: string;
   transactionId?: string;
+  createdBy: {
+    _id: string;
+    username: string;
+  };
 };
 
 const PAGE_SIZE = 30;
@@ -64,6 +68,11 @@ const QrTimerDisplay = ({ qrAccessedAt }: { qrAccessedAt?: string }) => {
   return <span className="font-bold text-cyan-700">{`${minutes}:${seconds}`}</span>;
 };
 
+interface UserOption {
+  _id: string;
+  username: string;
+}
+
 export default function AdminRequestPage() {
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
@@ -76,22 +85,58 @@ export default function AdminRequestPage() {
   const DEFAULT_PAID_MESSAGE = "คุณไม่เหลือยอดค้างชำระสำหรับใบแจ้งหนี้นี้";
 
   const [editData, setEditData] = useState<Partial<RowData>>({});
+  const [users, setUsers] = useState<UserOption[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
 
   // ฟังก์ชันสำหรับโหลดข้อมูลใหม่
-  const fetchRows = async () => {
+  const fetchRows = async (userId?: string) => {
     setRefreshing(true);
     setLoading(true);
-    const res = await fetch("/api/link?sort=desc");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("ไม่พบ Token. กรุณาเข้าสู่ระบบใหม่");
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    let url = "/api/link?sort=desc";
+    if (userId) {
+      url += `&userId=${userId}`;
+    }
+
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     const data = await res.json();
     setRows(data);
     setLoading(false);
     setRefreshing(false);
   };
 
-  // ดึงข้อมูลจาก API
+  // ดึงข้อมูลจาก API และผู้ใช้เมื่อโหลดหน้า
   useEffect(() => {
+    const fetchUsers = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await fetch("/api/admin/users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      setUsers(data);
+    };
+
+    fetchUsers();
     fetchRows();
-    }, []);
+  }, []);
+
+  useEffect(() => {
+    fetchRows(selectedUserId);
+  }, [selectedUserId]);
 
   const totalPage = Math.ceil(rows.length / PAGE_SIZE);
   const data = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -185,6 +230,18 @@ export default function AdminRequestPage() {
       <div className="flex flex-col items-stretch justify-between gap-4 md:flex-row md:items-center">
         <h2 className="text-xl font-bold md:text-2xl">รายการสร้าง Link</h2>
         <div className="flex items-center justify-end gap-2">
+          <select
+            className="rounded border border-gray-300 bg-white px-3 py-2 text-sm"
+            value={selectedUserId}
+            onChange={(e) => setSelectedUserId(e.target.value)}
+          >
+            <option value="">ผู้สร้างทั้งหมด</option>
+            {users.map((user) => (
+              <option key={user._id} value={user._id}>
+                {user.username}
+              </option>
+            ))}
+          </select>
           <a
             href="/admin"
             className="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
@@ -193,7 +250,7 @@ export default function AdminRequestPage() {
           </a>
           <button
             className="inline-flex items-center rounded bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-300"
-            onClick={fetchRows}
+            onClick={() => fetchRows(selectedUserId)}
             disabled={refreshing}
           >
             {refreshing ? (
@@ -301,6 +358,7 @@ export default function AdminRequestPage() {
                 <th className="border px-2 py-2">วันที่สร้าง</th>
                 <th className="border px-2 py-2">ชื่อ</th>
                 <th className="border px-2 py-2">จำนวนเงิน</th>
+                <th className="border px-2 py-2">ผู้สร้าง</th>
                 <th className="border px-2 py-2">สถานะ</th>
                 <th className="border px-2 py-2">QR Timer</th>
                 <th className="border px-2 py-2">Action</th>
@@ -327,6 +385,9 @@ export default function AdminRequestPage() {
                   <td className="border px-2 py-1">{row.name}</td>
                   <td className="border px-2 py-1 text-right">
                     {row.amount.toLocaleString()} บาท
+                  </td>
+                  <td className="border px-2 py-1 text-center">
+                    {row.createdBy?.username}
                   </td>
                   <td className="border px-2 py-1 text-center">
                     <StatusBadge status={row.status} />
@@ -411,6 +472,9 @@ export default function AdminRequestPage() {
               </div>
               <div>
                 <b>จำนวนเงิน:</b> {selected.amount.toLocaleString()} บาท
+              </div>
+              <div>
+                <b>ผู้สร้าง:</b> {selected.createdBy?.username}
               </div>
               <div>
                 <b>สถานะ:</b> <StatusBadge status={selected.status} />

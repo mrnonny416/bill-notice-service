@@ -4,7 +4,7 @@ import Image from "next/image";
 import React, { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BottomMenu from "@/components/BottomMenu";
-import FloatingButton from "@/components/FloatingButton";
+// import FloatingButton from "@/components/FloatingButton";
 import { LuClock3 } from "react-icons/lu";
 import { FaCheckCircle } from "react-icons/fa";
 import { IoAlertCircle } from "react-icons/io5";
@@ -128,7 +128,7 @@ function BillNoticeContent() {
     return (
       <div className="mx-auto mt-10 max-w-md rounded-lg p-6 text-center">
         กำลังโหลดข้อมูล...
-        <FloatingButton />
+        {/* <FloatingButton /> */}
         <BottomMenu active="right" />
       </div>
     );
@@ -170,7 +170,7 @@ function BillNoticeContent() {
             </div>
           </div>
         </div>
-        <FloatingButton />
+        {/* <FloatingButton /> */}
         <BottomMenu active="right" />
       </div>
     );
@@ -222,7 +222,7 @@ function BillNoticeContent() {
             </button>
           </div>
         </div>
-        <FloatingButton />
+        {/* <FloatingButton /> */}
         <BottomMenu active="right" />
       </div>
     );
@@ -280,7 +280,7 @@ function BillNoticeContent() {
           </div>
         </div>
 
-        <FloatingButton />
+        {/* <FloatingButton /> */}
         <BottomMenu active="right" />
       </div>
     );
@@ -314,7 +314,7 @@ function BillNoticeContent() {
             </label>
           </div>
         </div>
-        <FloatingButton />
+        {/* <FloatingButton /> */}
         <BottomMenu active="right" />
       </div>
     );
@@ -383,7 +383,10 @@ function BillNoticeContent() {
             </div>
           )}
         </div>
-        <div className="">หมายเลขธุรกรรม: {data.transactionId ? data.transactionId : 'ยังไม่พบธุรกรรม'}</div>
+        <div className="">
+          หมายเลขธุรกรรม:{" "}
+          {data.transactionId ? data.transactionId : "ยังไม่พบธุรกรรม"}
+        </div>
         <div className="">จำนวนเงิน: THB {data.amount.toLocaleString()}</div>
         <div className="">
           หมายเลขพร้อมเพย์:
@@ -393,7 +396,7 @@ function BillNoticeContent() {
         </div>
         <div className="text-cyan-700">หมายแสกนซ้ำใช้ได้แค่ครั้งเดียว</div>
       </div>
-      <FloatingButton />
+      {/* <FloatingButton /> */}
       <BottomMenu active="right" />
     </div>
   );
