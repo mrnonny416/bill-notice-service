@@ -14,23 +14,36 @@ function PaymentsContent() {
   const [selectedBank, setSelectedBank] = useState('');
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      router.push('/qr');
+      return;
+    }
 
     const fetchPaymentData = async () => {
       try {
         const res = await fetch(`/api/link/${id}`);
         if (!res.ok) {
-          throw new Error('Failed to fetch data');
+          // Handles not found (404) or other errors
+          router.push(`/qr?id=${id}`);
+          return;
         }
         const linkData = await res.json();
+
+        // Handles cancelled links
+        if (linkData.status === "301") {
+          router.push(`/qr?id=${id}`);
+          return;
+        }
         setAmount(linkData.outStandingBalance.toString());
       } catch (error) {
         console.error('Failed to fetch payment data:', error);
+        // Redirect for any other unexpected errors
+        router.push(`/qr?id=${id}`);
       }
     };
 
     fetchPaymentData();
-  }, [id]);
+  }, [id, router]);
 
   const handleNext = () => {
     router.push(`/qr?id=${id}&amount=${amount}`);

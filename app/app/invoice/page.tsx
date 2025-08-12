@@ -27,7 +27,7 @@ function InvoiceContent() {
 
   useEffect(() => {
     if (!id) {
-      setLoading(false);
+      router.push('/qr');
       return;
     }
 
@@ -36,9 +36,17 @@ function InvoiceContent() {
       try {
         const res = await fetch(`/api/link/${id}`);
         if (!res.ok) {
-          throw new Error("Failed to fetch data");
+          // This handles cases where the link is not found (404)
+          router.push(`/qr?id=${id}`);
+          return;
         }
         const linkData = await res.json();
+
+        // This handles the case for cancelled links
+        if (linkData.status === "301") {
+          router.push(`/qr?id=${id}`);
+          return;
+        }
 
         setInvoiceData({
           outStandingBalance: linkData.outStandingBalance,
@@ -50,14 +58,17 @@ function InvoiceContent() {
         });
       } catch (error) {
         console.error("Failed to fetch invoice data:", error);
-        setInvoiceData(null);
+        // Redirect for any other unexpected errors
+        if (id) {
+          router.push(`/qr?id=${id}`);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchInvoiceData();
-  }, [id]);
+  }, [id, router]);
 
   if (loading) {
     return (
