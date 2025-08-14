@@ -105,15 +105,26 @@ export default function AdminRequestPage() {
       url += `&userId=${userId}`;
     }
 
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await res.json();
-    setRows(data);
-    setLoading(false);
-    setRefreshing(false);
+    try {
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setRows(data);
+      } else {
+        console.error("API /api/link did not return an array:", data);
+        setRows([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch rows:", error);
+      setRows([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
   // ดึงข้อมูลจาก API และผู้ใช้เมื่อโหลดหน้า
@@ -121,13 +132,23 @@ export default function AdminRequestPage() {
     const fetchUsers = async () => {
       const token = localStorage.getItem("token");
       if (!token) return;
-      const res = await fetch("/api/admin/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await res.json();
-      setUsers(data);
+      try {
+        const res = await fetch("/api/admin/users", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setUsers(data);
+        } else {
+          console.error("API /api/admin/users did not return an array:", data);
+          setUsers([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+        setUsers([]);
+      }
     };
 
     fetchUsers();
