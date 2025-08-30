@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
+import authFetch from "@/lib/authFetch";
 
 interface LinkData {
   name: string;
@@ -18,28 +19,23 @@ interface LinkData {
   extraQuota: number;
 }
 
-async function saveLinkToDB(data: LinkData) {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    throw new Error("ไม่พบ Token. กรุณาเข้าสู่ระบบใหม่");
-  }
-
-  const res = await fetch("/api/link", {
+async function saveLinkToDB(data: Omit<LinkData, 'slip' | 'slipUploadedAt' | 'statusChangedAt'>) {
+  // The endpoint is POST /api/link, which is now protected.
+  const res = await authFetch("/api/link", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("บันทึกข้อมูลไม่สำเร็จ");
+  if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ message: "An unknown error occurred" }));
+      throw new Error(errorData.message || "บันทึกข้อมูลไม่สำเร็จ");
+  }
   return res.json();
 }
 
 export default function AdminPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [user, setUser] = useState("");
   const [amount, setAmount] = useState("");
   const [outStandingBalance, setOutStandingBalance] = useState("");
@@ -49,52 +45,20 @@ export default function AdminPage() {
   const [nextQuota, setNextQuota] = useState("");
   const [extraQuota, setExtraQuota] = useState("");
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true);
-    }
-  }, []);
+  // This page now assumes the user is already logged in.
+  // The authFetch utility will handle redirects if the user is not authenticated.
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const res = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Login failed");
-      }
-
-      const { token } = await res.json();
-      localStorage.setItem("token", token);
-      setIsLoggedIn(true);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        alert(error.message);
-      } else {
-        alert("An unknown error occurred");
-      }
-    }
-  };
-
-  // สร้าง Link และบันทึกลงฐานข้อมูล
   const handleGenerateLink = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setGeneratedLink(null);
     try {
-      // สร้างข้อมูลสำหรับบันทึก
-      const data: LinkData = {
+      const data = {
         name: user,
         amount: Number(amount),
         status: "000", // รอslip
-        slip: null, // base64 string หรือ null
-        slipUploadedAt: null,
-        statusChangedAt: new Date().toISOString(),
         outStandingBalance: Number(outStandingBalance),
         dueDate: new Date(dueDate),
         previousQuota: Number(previousQuota),
@@ -102,60 +66,26 @@ export default function AdminPage() {
         nextQuota: Number(nextQuota),
         extraQuota: Number(extraQuota),
       };
-      // บันทึกข้อมูลไปยังฐานข้อมูล
+      
       const result = await saveLinkToDB(data);
-      // สร้าง query string สำหรับส่งไปหน้า bill
+      
       const params = new URLSearchParams({
-        id: result._id, // สมมติ API คืน _id กลับมา
+        id: result._id,
       }).toString();
       setGeneratedLink(`/invoice?${params}`);
     } catch (err: unknown) {
       if (err instanceof Error) {
         alert(err.message);
       } else {
-        alert("เกิดข้อผิดพลาด");
+        alert("เกิดข้อผิดพลาดที่ไม่รู้จัก");
       }
+    } finally {
+        setLoading(false);
     }
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="mx-auto mt-20 max-w-sm rounded-lg border border-gray-200 bg-white p-6 shadow">
-        <h2 className="mb-6 text-center text-xl font-bold">Admin Login</h2>
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label className="mb-1 block font-medium">Username</label>
-            <input
-              type="text"
-              className="w-full rounded border border-gray-300 px-3 py-2"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
-          <div className="mb-6">
-            <label className="mb-1 block font-medium">Password</label>
-            <input
-              type="password"
-              className="w-full rounded border border-gray-300 px-3 py-2"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full rounded bg-blue-700 py-2 font-semibold text-white hover:bg-blue-800"
-          >
-            Login
-          </button>
-        </form>
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto mt-20 max-w-md rounded-lg border border-gray-200 bg-white p-6 shadow">
+    <div className="mx-auto mt-10 max-w-md rounded-lg border border-gray-200 bg-white p-6 shadow">
       <h2 className="mb-6 text-center text-2xl font-bold">สร้าง Link</h2>
       <form onSubmit={handleGenerateLink}>
         <div className="mb-4">
@@ -166,9 +96,10 @@ export default function AdminPage() {
             value={user}
             onChange={(e) => setUser(e.target.value)}
             required
+            disabled={loading}
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="mb-1 block font-medium">จำนวนเงิน</label>
           <input
             type="number"
@@ -177,9 +108,10 @@ export default function AdminPage() {
             onChange={(e) => setAmount(e.target.value)}
             required
             min={1}
+            disabled={loading}
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="mb-1 block font-medium">ยอดที่ต้องชำระ</label>
           <input
             type="number"
@@ -188,9 +120,10 @@ export default function AdminPage() {
             onChange={(e) => setOutStandingBalance(e.target.value)}
             required
             min={1}
+            disabled={loading}
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="mb-1 block font-medium">วันที่ครบกำหนด</label>
           <input
             type="date"
@@ -198,9 +131,10 @@ export default function AdminPage() {
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
             required
+            disabled={loading}
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="mb-1 block font-medium">โควต้ารอบที่แล้ว</label>
           <input
             type="number"
@@ -209,9 +143,10 @@ export default function AdminPage() {
             onChange={(e) => setPreviousQuota(e.target.value)}
             required
             min={1}
+            disabled={loading}
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="mb-1 block font-medium">โควต้ารอบนี้</label>
           <input
             type="number"
@@ -220,9 +155,10 @@ export default function AdminPage() {
             onChange={(e) => setCurrentQuota(e.target.value)}
             required
             min={1}
+            disabled={loading}
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="mb-1 block font-medium">โควต้ารอบต่อไป</label>
           <input
             type="number"
@@ -231,9 +167,10 @@ export default function AdminPage() {
             onChange={(e) => setNextQuota(e.target.value)}
             required
             min={1}
+            disabled={loading}
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="mb-1 block font-medium">วงเงินเพิ่ม</label>
           <input
             type="number"
@@ -242,13 +179,15 @@ export default function AdminPage() {
             onChange={(e) => setExtraQuota(e.target.value)}
             required
             min={1}
+            disabled={loading}
           />
         </div>
         <button
           type="submit"
-          className="w-full rounded bg-green-600 py-2 font-semibold text-white hover:bg-green-700"
+          className="w-full rounded bg-green-600 py-2 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+          disabled={loading}
         >
-          สร้าง Link
+          {loading ? 'กำลังสร้าง...' : 'สร้าง Link'}
         </button>
       </form>
       {generatedLink && (

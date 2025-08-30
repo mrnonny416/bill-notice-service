@@ -9,7 +9,7 @@ const FloatingButton: React.FC = () => {
   useEffect(() => {
     const fetchLineId = async () => {
       try {
-        const res = await fetch('/api/admin/line-setting');
+        const res = await fetch('/api/line-setting');
         if (res.ok) {
           const { data } = await res.json();
           setLineId(data.value);

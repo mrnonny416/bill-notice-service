@@ -1,7 +1,9 @@
+
 "use client";
 
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import authFetch from "@/lib/authFetch";
 
 type RowData = {
   _id: string;
@@ -38,7 +40,7 @@ const QrTimerDisplay = ({ qrAccessedAt }: { qrAccessedAt?: string }) => {
         const now = new Date().getTime();
         const accessedAt = new Date(qrAccessedAt).getTime();
         const diff = now - accessedAt;
-                const remaining = 10 * 60 * 1000 - diff;
+        const remaining = 10 * 60 * 1000 - diff;
         if (remaining > 0) {
           setTimeLeft(Math.floor(remaining / 1000));
         } else {
@@ -88,29 +90,17 @@ export default function AdminRequestPage() {
   const [users, setUsers] = useState<UserOption[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
 
-  // ฟังก์ชันสำหรับโหลดข้อมูลใหม่
-  const fetchRows = async (userId?: string) => {
+  const fetchRows = useCallback(async (userId?: string) => {
     setRefreshing(true);
     setLoading(true);
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("ไม่พบ Token. กรุณาเข้าสู่ระบบใหม่");
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
-
     let url = "/api/link?sort=desc";
     if (userId) {
       url += `&userId=${userId}`;
     }
 
     try {
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // This endpoint is public, so we can use standard fetch, but it still needs a token for the original logic.
+      const res = await authFetch(url);
       const data = await res.json();
       if (Array.isArray(data)) {
         setRows(data);
@@ -125,39 +115,32 @@ export default function AdminRequestPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
-  // ดึงข้อมูลจาก API และผู้ใช้เมื่อโหลดหน้า
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      try {
-        const res = await fetch("/api/admin/users", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setUsers(data);
-        } else {
-          console.error("API /api/admin/users did not return an array:", data);
-          setUsers([]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await authFetch("/api/admin/users");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setUsers(data);
+      } else {
+        console.error("API /api/admin/users did not return an array:", data);
         setUsers([]);
       }
-    };
-
-    fetchUsers();
-    fetchRows();
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      setUsers([]);
+    }
   }, []);
 
   useEffect(() => {
+    fetchUsers();
+    fetchRows();
+  }, [fetchUsers, fetchRows]);
+
+  useEffect(() => {
     fetchRows(selectedUserId);
-  }, [selectedUserId]);
+  }, [selectedUserId, fetchRows]);
 
   const totalPage = Math.ceil(rows.length / PAGE_SIZE);
   const data = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -186,40 +169,44 @@ export default function AdminRequestPage() {
     setEditData({});
   };
 
-  // เพิ่มฟังก์ชันสำหรับอัปเดตสถานะและข้อความ
-  async function updateStatus(
-    id: string,
-    status: string,
-    paidMessage?: string,
-  ) {
-    await fetch(`/api/link/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status,
-        statusChangedAt: new Date().toISOString(),
-        ...(paidMessage ? { paidMessage } : {}),
-      }),
-    });
-  }
+  const updateStatus = useCallback(async (id: string, status: string, paidMessage?: string) => {
+    try {
+        // NOTE: This PATCH endpoint was identified as a public one. 
+        // For simplicity in this fix, we will call it via authFetch anyway.
+        // A better long-term solution is to create a protected admin endpoint for this.
+        await authFetch(`/api/link/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                status,
+                statusChangedAt: new Date().toISOString(),
+                ...(paidMessage ? { paidMessage } : {}),
+            }),
+        });
+    } catch (error) {
+        console.error("Failed to update status:", error);
+    }
+  }, []);
 
-  const handleUpdate = async (e: React.FormEvent) => {
+  const handleUpdate = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selected) return;
 
     try {
-      await fetch(`/api/link/${selected._id}`, {
+      // NOTE: This PATCH endpoint was identified as a public one. 
+      // For simplicity in this fix, we will call it via authFetch anyway.
+      await authFetch(`/api/link/${selected._id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editData),
       });
       closeEditModal();
-      fetchRows();
+      fetchRows(selectedUserId);
     } catch (error) {
       console.error("Failed to update data:", error);
       alert("Failed to update data");
     }
-  };
+  }, [editData, fetchRows, selected, selectedUserId]);
 
   const StatusBadge = ({ status }: { status: string }) => {
     switch (status) {

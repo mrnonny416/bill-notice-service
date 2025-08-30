@@ -10,7 +10,10 @@ export async function GET(
   try {
     const { id } = await context.params;
     await connectDB();
-    const doc = await LinkModel.findById(id);
+    const doc = await LinkModel.findById(id).populate(
+      "createdBy",
+      "promptpayNumber",
+    );
     if (!doc) {
       return NextResponse.json({ error: "ไม่พบข้อมูล" }, { status: 404 });
     }
