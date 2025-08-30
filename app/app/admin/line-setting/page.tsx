@@ -1,21 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import authFetch from "@/lib/authFetch";
 
 const LineSettingPage = () => {
   const [lineId, setLineId] = useState("");
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchLineId = async () => {
       try {
+        // This is the public endpoint, so standard fetch is fine.
         const res = await fetch("/api/line-setting");
         if (res.ok) {
           const { data } = await res.json();
           setLineId(data.value);
+        } else {
+          setError("Failed to fetch current Line ID.");
         }
       } catch (error) {
         console.error("Failed to fetch Line ID", error);
+        setError("An error occurred while fetching the Line ID.");
       }
     };
     fetchLineId();
@@ -23,8 +29,11 @@ const LineSettingPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage("");
+    setError("");
     try {
-      const res = await fetch("/api/admin/line-setting", {
+      // This is a protected endpoint, so we use authFetch.
+      const res = await authFetch("/api/admin/line-setting", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ value: lineId }),
@@ -32,11 +41,17 @@ const LineSettingPage = () => {
       if (res.ok) {
         setMessage("Line ID updated successfully!");
       } else {
-        setMessage("Failed to update Line ID");
+        const errorData = await res.json().catch(() => null);
+        setError(errorData?.message || "Failed to update Line ID");
       }
-    } catch (error) {
-      console.error("An error occurred", error);
-      setMessage("An error occurred");
+    } catch (err) {
+      // AuthError is handled by authFetch (redirect), so we only catch other errors.
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
+      console.error("An error occurred", err);
     }
   };
 
@@ -66,7 +81,8 @@ const LineSettingPage = () => {
           Save
         </button>
       </form>
-      {message && <p className="mt-4 text-sm text-gray-600">{message}</p>}
+      {message && <p className="mt-4 text-sm text-green-600">{message}</p>}
+      {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
     </div>
   );
 };

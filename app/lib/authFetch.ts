@@ -1,14 +1,19 @@
+// A custom error class for authentication errors
+export class AuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
 
 // A simple wrapper around fetch to handle authentication.
-const authFetch = async (url: string, options: RequestInit = {}) => {
+const authFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
   const token = localStorage.getItem('token');
 
   if (!token) {
-    // If no token is found, redirect to login page.
-    // This is a client-side redirect.
+    // If no token is found, throw an error and redirect.
     window.location.href = '/admin/login';
-    // Return a promise that will never resolve to prevent further execution
-    return new Promise(() => {});
+    throw new AuthError('No token found. Redirecting to login.');
   }
 
   const headers = new Headers(options.headers);
@@ -20,11 +25,10 @@ const authFetch = async (url: string, options: RequestInit = {}) => {
   });
 
   if (response.status === 401) {
-    // If the token is invalid or expired, clear it and redirect to login.
+    // If the token is invalid or expired, clear it, redirect, and throw an error.
     localStorage.removeItem('token');
     window.location.href = '/admin/login';
-    // Return a promise that will never resolve
-    return new Promise(() => {});
+    throw new AuthError('Session expired. Redirecting to login.');
   }
 
   return response;
